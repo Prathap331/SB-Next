@@ -40,7 +40,7 @@ export default function SearchTopicPage() {
     try {
       // decodeURIComponent is safe if the value contains percent-escapes like %20
       return decodeURIComponent(rawTopic);
-    } catch (e) {
+    } catch {
       // If decoding fails (malformed percent-encoding), fall back to raw value
       return rawTopic;
     }
@@ -238,7 +238,7 @@ export default function SearchTopicPage() {
                     <Loader2 className="w-8 h-8 animate-spin text-black" />
                     <div>
                       <h3 className="text-lg font-semibold text-gray-900 mb-2">Generating Script Ideas</h3>
-                      <p className="text-gray-600">Our AI is analyzing "{topic}" and creating personalized script ideas for you...</p>
+                      <p className="text-gray-600">Our AI is analyzing &quot;{topic}&quot; and creating personalized script ideas for you...</p>
                       <p className="text-sm text-gray-500 mt-2">This may take up to 2 minutes</p>
                     </div>
                   </div>

@@ -189,7 +189,7 @@ export default function Home() {
                 <BrainCircuit className="w-6 h-6 mr-3" />
                 <h3 className="text-xl font-bold">Triggered Chain-of-Actions (TCA) Intelligence</h3>
               </div>
-              <p className="mb-4 flex-grow">Unlike LLMS's single-response model, our system runs multi-step reasoning workflows automatically</p>
+              <p className="mb-4 flex-grow">Unlike LLMS&apos;s single-response model, our system runs multi-step reasoning workflows automatically</p>
               <Button variant="secondary">Read More</Button>
             </div>
             <div className="bg-black text-white p-6 rounded-lg shadow-lg flex flex-col">
@@ -197,7 +197,7 @@ export default function Home() {
                 <BrainCircuit className="w-6 h-6 mr-3" />
                 <h3 className="text-xl font-bold">Triggered Chain-of-Actions (TCA) Intelligence</h3>
               </div>
-              <p className="mb-4 flex-grow">Unlike LLMS's single-response model, our system runs multi-step reasoning workflows automatically</p>
+              <p className="mb-4 flex-grow">Unlike LLMS&apos;s single-response model, our system runs multi-step reasoning workflows automatically</p>
               <Button variant="secondary">Read More</Button>
             </div>
             <div className="bg-black text-white p-6 rounded-lg shadow-lg flex flex-col">
@@ -205,7 +205,7 @@ export default function Home() {
                 <BrainCircuit className="w-6 h-6 mr-3" />
                 <h3 className="text-xl font-bold">Triggered Chain-of-Actions (TCA) Intelligence</h3>
               </div>
-              <p className="mb-4 flex-grow">Unlike LLMS's single-response model, our system runs multi-step reasoning workflows automatically</p>
+              <p className="mb-4 flex-grow">Unlike LLMS&apos;s single-response model, our system runs multi-step reasoning workflows automatically</p>
               <Button variant="secondary">Read More</Button>
             </div>
             <div className="bg-black text-white p-6 rounded-lg shadow-lg flex flex-col">
@@ -213,7 +213,7 @@ export default function Home() {
                 <BrainCircuit className="w-6 h-6 mr-3" />
                 <h3 className="text-xl font-bold">Triggered Chain-of-Actions (TCA) Intelligence</h3>
               </div>
-              <p className="mb-4 flex-grow">Unlike LLMS's single-response model, our system runs multi-step reasoning workflows automatically</p>
+              <p className="mb-4 flex-grow">Unlike LLMS&apos;s single-response model, our system runs multi-step reasoning workflows automatically</p>
               <Button variant="secondary">Read More</Button>
             </div>
           </div>
