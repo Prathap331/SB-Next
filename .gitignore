@@ -3,6 +3,7 @@
 # dependencies
 /node_modules
 /.pnp
+/old-vite-website
 .pnp.*
 .yarn/*
 !.yarn/patches
