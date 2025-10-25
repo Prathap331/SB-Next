@@ -32,6 +32,10 @@ export const metadata: Metadata = {
     title: "Storybit",
     description: "Revolutionary AI-powered scriptwriting platform for content creators worldwide.",
   },
+  // Canonical URL to help search engines and avoid duplicate content
+  alternates: {
+    canonical: process.env.NEXT_PUBLIC_SITE_URL || 'https://storybit.tech',
+  },
   icons: {
     icon: "/favicon_io/favicon.ico",
     shortcut: "/favicon_io/favicon.ico",
