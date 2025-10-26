@@ -3,13 +3,14 @@
 import React, { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { 
-  Loader2, FileText, Lightbulb,
-  Search, Link as LinkIcon, ExternalLink, Languages, 
-  Download
+  Loader2, FileText, Lightbulb, Heart, BookOpen, History, 
+  Search, Link as LinkIcon, ExternalLink, 
+  Eye, Monitor, Download
 } from 'lucide-react';
-import { GeneratedScript } from '@/components/GeneratedScript';
+// Note: GeneratedScript component exists in the project but is not used in this detailed view
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import Header from '@/components/Header';
@@ -211,134 +212,175 @@ export default function ScriptPage() {
     <div className="min-h-screen bg-gradient-to-br from-purple-50 via-blue-50 to-indigo-100">
       <Header />
       <main className="container mx-auto px-4 py-8">
-        <div className="max-w-6xl mx-auto">
-          {genParams && (
-            <Card className="mb-8">
-              <CardContent className="p-4">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <div className="text-sm text-gray-500">Topic</div>
-                    <div className="font-medium">{genParams.topic || genParams.ideaTitle || '—'}</div>
-                  </div>
-                  <div>
-                    <div className="text-sm text-gray-500">Duration</div>
-                    <div className="font-medium">{genParams.duration_minutes ?? genParams.length ?? '—'} min</div>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          )}
+        <div className="mb-8">
+          <h1 className="text-3xl font-bold text-gray-900 mb-2">{data.title || 'Generated Script'}</h1>
+          <p className="text-gray-600">Generated script with comprehensive research and strategic structure</p>
+        </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-            {/* Script Metrics */}
-            <Card>
+        {/* Metrics card */}
+        <Card className="shadow-lg mb-8">
+          <CardHeader>
+            <CardTitle>Script Metrics</CardTitle>
+            <CardDescription>Comprehensive analysis of your generated script</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-2 md:grid-cols-6 gap-4 mb-6">
+              <div className="text-center">
+                <FileText className="w-8 h-8 mx-auto mb-2 text-black" />
+                <div className="text-2xl font-bold text-gray-900">{data.metrics?.totalWords ?? data.estimated_word_count ?? 0}</div>
+                <div className="text-sm text-gray-600">Total Words</div>
+              </div>
+              <div className="text-center">
+                <Heart className="w-8 h-8 mx-auto mb-2 text-black" />
+                <div className="text-2xl font-bold text-gray-900">{data.metrics?.emotionalDepth ?? data.analysis?.emotional_depth ?? '—'}</div>
+                <div className="text-sm text-gray-600">Emotional Depth</div>
+              </div>
+              <div className="text-center">
+                <Lightbulb className="w-8 h-8 mx-auto mb-2 text-black" />
+                <div className="text-2xl font-bold text-gray-900">{data.metrics?.generalExamples ?? data.analysis?.examples_count ?? 0}</div>
+                <div className="text-sm text-gray-600">Examples</div>
+              </div>
+              <div className="text-center">
+                <BookOpen className="w-8 h-8 mx-auto mb-2 text-black" />
+                <div className="text-2xl font-bold text-gray-900">{data.metrics?.proverbs ?? 0}</div>
+                <div className="text-sm text-gray-600">Proverbs</div>
+              </div>
+              <div className="text-center">
+                <History className="w-8 h-8 mx-auto mb-2 text-black" />
+                <div className="text-2xl font-bold text-gray-900">{data.metrics?.historicalFacts ?? 0}</div>
+                <div className="text-sm text-gray-600">Historical Facts</div>
+              </div>
+              <div className="text-center">
+                <Search className="w-8 h-8 mx-auto mb-2 text-black" />
+                <div className="text-2xl font-bold text-gray-900">{data.metrics?.researchFacts ?? data.analysis?.research_facts_count ?? 0}</div>
+                <div className="text-sm text-gray-600">Research Facts</div>
+              </div>
+            </div>
+
+            <div>
+              <h4 className="font-semibold text-gray-900 mb-3">Keywords</h4>
+              <div className="flex flex-wrap gap-2">
+                {data.metrics?.keywords?.map((k, i) => (
+                  <Badge key={i} variant="secondary" className="bg-blue-100 text-gray-800 px-4 py-2">{k}</Badge>
+                ))}
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Main two-column layout */}
+        <div className="grid lg:grid-cols-4 gap-8">
+          <div className="lg:col-span-1 space-y-6">
+            {/* Structure */}
+            <Card className="shadow-lg">
               <CardHeader>
-                <CardTitle className="text-lg flex items-center gap-2">
-                  <FileText className="h-5 w-5" />
-                  Script Analysis
-                </CardTitle>
+                <CardTitle className="text-lg">Script Structure Flow</CardTitle>
+                <CardDescription>Visual representation of your script's flow and structure</CardDescription>
               </CardHeader>
               <CardContent>
-                <div className="space-y-2">
-                  <div className="flex justify-between items-center">
-                    <span className="text-sm text-muted-foreground">Words</span>
-                    <span className="font-medium">{data.estimated_word_count}</span>
+                <ScrollArea className="h-[400px]">
+                  <div className="space-y-3 pr-4">
+                    {data.structure?.map((section, index) => (
+                      <div key={section.id ?? index} className="flex items-center">
+                        <div className="flex flex-col items-center mr-3">
+                          <div className="w-8 h-8 rounded-full bg-gray-600 text-white flex items-center justify-center">{index + 1}</div>
+                          <div className="h-full w-px bg-gray-200" />
+                        </div>
+                        <div className="flex-1 bg-white/50 rounded-lg p-3 border border-gray-200">
+                          <div className="font-medium">{section.title}</div>
+                          <div className="text-xs text-gray-500">{section.duration} • {section.words ?? '—'} words</div>
+                        </div>
+                      </div>
+                    ))}
                   </div>
-                  <div className="flex justify-between items-center">
-                    <span className="text-sm text-muted-foreground">Examples</span>
-                    <span className="font-medium">{data.analysis?.examples_count || 0}</span>
-                  </div>
-                  <div className="flex justify-between items-center">
-                    <span className="text-sm text-muted-foreground">Research Facts</span>
-                    <span className="font-medium">{data.analysis?.research_facts_count || 0}</span>
-                  </div>
-                  <div className="flex justify-between items-center">
-                    <span className="text-sm text-muted-foreground">Proverbs</span>
-                    <span className="font-medium">{data.analysis?.proverbs_count || 0}</span>
-                  </div>
-                </div>
+                </ScrollArea>
               </CardContent>
             </Card>
 
-            {/* Structure Flow */}
-            <Card>
+            {/* Sources */}
+            <Card className="shadow-lg">
               <CardHeader>
-                <CardTitle className="text-lg flex items-center gap-2">
-                  <Lightbulb className="h-5 w-5" />
-                  Emotional Depth
-                </CardTitle>
+                <CardTitle className="flex items-center text-lg"><LinkIcon className="w-5 h-5 mr-2" />Research Sources</CardTitle>
+                <CardDescription>Credible sources and references used in this script</CardDescription>
               </CardHeader>
               <CardContent>
-                <div className="space-y-2">
-                  <p className="text-sm text-muted-foreground">{data.analysis?.emotional_depth || 'Not analyzed'}</p>
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Research Sources & Actions */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-lg flex items-center gap-2">
-                  <Search className="h-5 w-5" />
-                  Sources & Actions
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-2">
-                  <Button 
-                    variant="outline" 
-                    className="w-full justify-start" 
-                    onClick={() => setShowSourcesDialog(true)}
-                    disabled={!data.source_urls?.length}
-                  >
-                    <LinkIcon className="h-4 w-4 mr-2" /> View Research Sources
-                  </Button>
-                  <Button variant="outline" className="w-full justify-start">
-                    <Download className="h-4 w-4 mr-2" /> Download as PDF
-                  </Button>
-                  <Button variant="outline" className="w-full justify-start">
-                    <Languages className="h-4 w-4 mr-2" /> Translate
-                  </Button>
-                </div>
+                <ScrollArea className="h-[400px]">
+                  <div className="space-y-4 pr-4">
+                    {(data.source_urls || []).map((url, index) => (
+                      <div key={index} className="flex items-start space-x-3 p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
+                        <ExternalLink className="w-5 h-5 text-black mt-1 flex-shrink-0" />
+                        <div className="flex-1">
+                          <div className="font-medium text-sm break-all"><a href={url} target="_blank" rel="noopener noreferrer" className="text-gray-800 hover:underline">{url}</a></div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </ScrollArea>
               </CardContent>
             </Card>
           </div>
 
-          {/* Main Script Content */}
-          <Card>
-            <CardContent className="p-6">
-              <GeneratedScript
-                script={data.script}
-                estimated_word_count={data.estimated_word_count}
-                source_urls={data.source_urls || []}
-                analysis={data.analysis}
-              />
-            </CardContent>
-          </Card>
+          <div className="lg:col-span-3">
+            <Card className="shadow-lg">
+              <CardHeader className="pb-4">
+                <div className="flex flex-col space-y-4">
+                  <div>
+                    <CardTitle className="text-lg">Script Synopsis</CardTitle>
+                    <CardDescription>
+                      Comprehensive overview of your script content and approach
+                    </CardDescription>
+                  </div>
+
+                  <div className="flex space-x-3">
+                    <Button size="sm" className="flex-1 bg-gradient-to-r from-gray-600 to-gray-800 text-white hover:from-gray-700 hover:to-black" onClick={() => { /* view full script action */ }}>
+                      <Eye className="w-4 h-4 mr-1" />
+                      View Full Script
+                    </Button>
+
+                    <div className="relative flex-1">
+                      <Button size="sm" variant="outline" className="w-full">
+                        Translate
+                      </Button>
+                    </div>
+
+                    <Button size="sm" variant="outline" className="flex-1" onClick={() => { /* teleprompter */ }}>
+                      <Monitor className="w-4 h-4 mr-1" /> Teleprompter
+                    </Button>
+
+                    <Button size="sm" variant="outline" className="flex-1" onClick={() => { /* download */ }}>
+                      <Download className="w-4 h-4 mr-1" /> Download
+                    </Button>
+                  </div>
+                </div>
+              </CardHeader>
+              <CardContent className="pt-0 flex-1">
+                <ScrollArea className="h-[640px]">
+                  <div className="prose prose-sm max-w-none">
+                    <div className="text-gray-700 leading-relaxed whitespace-pre-line text-base">
+                      {data.synopsis || data.script || 'No synopsis available.'}
+                    </div>
+                  </div>
+                </ScrollArea>
+              </CardContent>
+            </Card>
+          </div>
         </div>
       </main>
       <Footer />
 
-      {/* Research Sources Dialog */}
+      {/* Research Sources Dialog - kept for compatibility */}
       <Dialog open={showSourcesDialog} onOpenChange={setShowSourcesDialog}>
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Research Sources</DialogTitle>
-            <DialogDescription>
-              Sources used to generate this script.
-            </DialogDescription>
+            <DialogDescription>Sources used to generate this script.</DialogDescription>
           </DialogHeader>
           <ScrollArea className="max-h-[60vh]">
             <div className="space-y-4">
               {data.source_urls?.map((url, index) => (
                 <Card key={index}>
                   <CardContent className="p-4">
-                    <a 
-                      href={url} 
-                      target="_blank" 
-                      rel="noopener noreferrer"
-                      className="text-sm text-blue-500 hover:underline flex items-center gap-1"
-                    >
+                    <a href={url} target="_blank" rel="noopener noreferrer" className="text-sm text-blue-500 hover:underline flex items-center gap-1">
                       {url} <ExternalLink className="h-3 w-3" />
                     </a>
                   </CardContent>
