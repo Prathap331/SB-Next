@@ -275,7 +275,7 @@ export default function ScriptPage() {
             <Card className="shadow-lg">
               <CardHeader>
                 <CardTitle className="text-lg">Script Structure Flow</CardTitle>
-                <CardDescription>Visual representation of your script's flow and structure</CardDescription>
+                <CardDescription>Visual representation of your script&apos;s flow and structure</CardDescription>
               </CardHeader>
               <CardContent>
                 <ScrollArea className="h-[400px]">
