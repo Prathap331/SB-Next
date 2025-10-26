@@ -10,6 +10,8 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Badge } from '@/components/ui/badge';
 import { Loader2, AlertCircle, Clock, TrendingUp } from 'lucide-react';
 import { ApiService } from '@/services/api';
+import { ScriptGenerationModal, ScriptGenerationParams } from '@/components/ScriptGenerationModal';
+
 
 interface ScriptIdea {
   id: number;
@@ -18,16 +20,76 @@ interface ScriptIdea {
   category: string;
 }
 
-// Simple in-memory cache to persist results across navigations
+// Cache both in memory and localStorage to persist between visits
 const resultsCache = new Map<string, { scriptIdeas: ScriptIdea[]; error: string | null; timestamp: number }>();
-const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
+const CACHE_DURATION = 24 * 60 * 60 * 1000; // 24 hours - topics don't change that often
+
+interface CacheItem {
+  scriptIdeas: ScriptIdea[];
+  error: string | null;
+  timestamp: number;
+}
+
+const getFromLocalStorage = (topic: string): CacheItem | null => {
+  try {
+    const item = localStorage.getItem(`topic_${topic}`);
+    if (!item) return null;
+    const parsed = JSON.parse(item) as CacheItem;
+    const now = Date.now();
+    if (now - parsed.timestamp > CACHE_DURATION) {
+      localStorage.removeItem(`topic_${topic}`);
+      return null;
+    }
+    return parsed;
+  } catch {
+    return null;
+  }
+};
+
+const saveToCache = (topic: string, data: CacheItem) => {
+  // Save to memory cache
+  resultsCache.set(topic, data);
+  // Save to localStorage
+  try {
+    localStorage.setItem(`topic_${topic}`, JSON.stringify(data));
+  } catch (_unused) {
+    // If localStorage is full, clean up old items
+    const keys = Object.keys(localStorage);
+    const topicKeys = keys.filter(k => k.startsWith('topic_'));
+    if (topicKeys.length > 0) {
+      localStorage.removeItem(topicKeys[0]); // Remove oldest
+      try {
+        localStorage.setItem(`topic_${topic}`, JSON.stringify(data));
+      } catch {
+        console.warn('Failed to save to localStorage after cleanup');
+      }
+    }
+  }
+};
 
 const cleanupCache = () => {
   const now = Date.now();
+  // Clean memory cache
   for (const [key, value] of resultsCache.entries()) {
     if (now - value.timestamp > CACHE_DURATION) {
       resultsCache.delete(key);
     }
+  }
+  // Clean localStorage
+  try {
+    const keys = Object.keys(localStorage);
+    const topicKeys = keys.filter(k => k.startsWith('topic_'));
+    topicKeys.forEach(key => {
+      const item = localStorage.getItem(key);
+      if (item) {
+        const parsed = JSON.parse(item) as CacheItem;
+        if (now - parsed.timestamp > CACHE_DURATION) {
+          localStorage.removeItem(key);
+        }
+      }
+    });
+  } catch {
+    // Ignore localStorage errors
   }
 };
 
@@ -51,8 +113,38 @@ export default function SearchTopicPage() {
   const [error, setError] = useState<string | null>(null);
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [videoLengths, setVideoLengths] = useState<Record<number, string>>({});
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [selectedIdea, setSelectedIdea] = useState<ScriptIdea | null>(null);
+  const [isGenerating, setIsGenerating] = useState(false);
 
   const initialLoadStartRef = useRef<number | null>(null);
+
+
+  const handleModalSubmit = async (params: ScriptGenerationParams) => {
+    // Save generation params and navigate to /script where the fetch will be performed
+    setIsGenerating(true);
+    try {
+      const payload = {
+        ...params,
+        ideaTitle: selectedIdea?.title,
+        ideaDescription: selectedIdea?.description,
+        length: videoLengths[selectedIdea?.id || 0] || '10',
+      };
+
+      // Use sessionStorage so it's short-lived and per-tab
+      try {
+        sessionStorage.setItem('generate_params', JSON.stringify(payload));
+      } catch (e) {
+        console.warn('Failed to persist generate params to sessionStorage', e);
+      }
+
+      // Close modal and navigate to the script page which will perform the API call and show loader
+      setIsModalOpen(false);
+      router.push('/script');
+    } finally {
+      setIsGenerating(false);
+    }
+  };
 
   useEffect(() => {
     cleanupCache();
@@ -64,12 +156,26 @@ export default function SearchTopicPage() {
     const run = async () => {
       if (!topic) return;
 
+      // Try localStorage first
+      const localData = getFromLocalStorage(topic);
+      if (localData) {
+        setScriptIdeas(localData.scriptIdeas);
+        setError(localData.error);
+        setIsLoading(false);
+        // Also update memory cache
+        resultsCache.set(topic, localData);
+        return;
+      }
+
+      // Try memory cache next
       const cached = resultsCache.get(topic);
       const now = Date.now();
       if (cached && now - cached.timestamp < CACHE_DURATION) {
         setScriptIdeas(cached.scriptIdeas);
         setError(cached.error);
         setIsLoading(false);
+        // Update localStorage while we have the data
+        saveToCache(topic, cached);
         return;
       }
 
@@ -93,7 +199,8 @@ export default function SearchTopicPage() {
             category: getCategoryFromIndex(idx),
           }));
 
-          resultsCache.set(topic, { scriptIdeas: ideas, error: null, timestamp: Date.now() });
+          const cacheData = { scriptIdeas: ideas, error: null, timestamp: Date.now() };
+          saveToCache(topic, cacheData);
           setScriptIdeas(ideas);
           setIsLoading(false);
           return;
@@ -139,7 +246,8 @@ export default function SearchTopicPage() {
             ? 'API server returned 502 for an extended period. Using sample data.'
             : 'API temporarily unavailable. Using sample data.';
 
-          resultsCache.set(topic, { scriptIdeas: fallbackIdeas, error: errorMessage, timestamp: Date.now() });
+          const cacheData = { scriptIdeas: fallbackIdeas, error: errorMessage, timestamp: Date.now() };
+          saveToCache(topic, cacheData);
           if (isCancelled) return;
           setScriptIdeas(fallbackIdeas);
           setError(errorMessage);
@@ -166,11 +274,13 @@ export default function SearchTopicPage() {
     router.push(`/script/${id}`);
   };
 
-  const handleGenerateScript = (id: number) => {
-    const videoLength = videoLengths[id];
-    if (videoLength && videoLength.trim()) {
-      router.push(`/script/${id}?duration=${encodeURIComponent(videoLength)}`);
+  const handleGenerateScript = async (idea: ScriptIdea) => {
+    if (!videoLengths[idea.id]) {
+      console.warn('No length specified for this script');
+      return;
     }
+    setSelectedIdea(idea);
+    setIsModalOpen(true);
   };
 
   const handleVideoLengthChange = (id: number, value: string) => {
@@ -180,6 +290,16 @@ export default function SearchTopicPage() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-purple-50 via-blue-50 to-indigo-100">
       <Header />
+
+      <ScriptGenerationModal 
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        topic={selectedIdea?.title || ''}
+        initialDuration={videoLengths[selectedIdea?.id || 0] || '10'}
+        onGenerate={handleModalSubmit}
+        isGenerating={isGenerating}
+      />
+
 
       <div className="container mx-auto px-4 py-8">
         <div className="mb-8">
@@ -271,7 +391,7 @@ export default function SearchTopicPage() {
                       <div className="flex items-start justify-between mb-4">
                         <div className="flex-1">
                           <div className="flex items-center mb-2">
-                            <CardTitle className="text-xl hover:text-gray-600 transition-colors cursor-pointer mr-3" onClick={() => handleStatementClick(statement.id)}>
+                            <CardTitle className="text-xl mr-3">
                               {statement.title}
                             </CardTitle>
                             <Badge variant="secondary" className="bg-black text-white">
@@ -287,16 +407,16 @@ export default function SearchTopicPage() {
                       <div className="flex items-center justify-between">
                         <Badge variant="secondary">{statement.category}</Badge>
 
-                        <div className="flex items-center space-x-3">
-                          <div className="flex items-center space-x-2">
-                            <label className="text-sm font-medium text-gray-700">Length (min):</label>
-                            <Input type="number" placeholder="10" value={videoLengths[statement.id] || ''} onChange={(e) => handleVideoLengthChange(statement.id, e.target.value)} className="w-20" min={1} max={60} />
+                          <div className="flex items-center space-x-3">
+                            <div className="flex items-center space-x-2">
+                              <label className="text-sm font-medium text-gray-700">Length (min):</label>
+                              <Input type="number" placeholder="10" value={videoLengths[statement.id] || ''} onChange={(e) => handleVideoLengthChange(statement.id, e.target.value)} className="w-20" min={1} max={60} />
+                            </div>
+                            <Button onClick={() => handleGenerateScript(statement)} className="bg-gradient-to-r from-gray-500 to-black hover:from-gray-600 hover:to-black text-white font-semibold" disabled={!videoLengths[statement.id]?.trim()} size="sm">
+                              <Clock className="w-4 h-4 mr-2" />
+                              Generate Script
+                            </Button>
                           </div>
-                          <Button onClick={() => handleGenerateScript(statement.id)} className="bg-black text-white font-semibold" disabled={!videoLengths[statement.id]?.trim()} size="sm">
-                            <Clock className="w-4 h-4 mr-2" />
-                            Generate Script
-                          </Button>
-                        </div>
                       </div>
                     </CardContent>
                   </Card>
