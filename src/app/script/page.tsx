@@ -62,6 +62,20 @@ export default function ScriptPage() {
   const [error, setError] = useState<string | null>(null);
   const [genParams, setGenParams] = useState<GenerationParams | null>(null);
 
+  const getAuthToken = (): string | null => {
+    const tokenData = localStorage.getItem('sb-xncfghdikiqknuruurfh-auth-token');
+    if (tokenData) {
+      try {
+        const parsedToken = JSON.parse(tokenData);
+        return parsedToken.access_token || null;
+      } catch (error) {
+        console.error('Failed to parse auth token:', error);
+        return null;
+      }
+    }
+    return null;
+  };
+
   useEffect(() => {
     const run = async () => {
       setIsLoading(true);
@@ -88,9 +102,15 @@ export default function ScriptPage() {
           // show summary immediately
           setGenParams(payload);
           try {
+            const token = getAuthToken();
+            const headers: HeadersInit = { 'Content-Type': 'application/json' };
+            if (token) {
+              headers['Authorization'] = `Bearer ${token}`;
+            }
+
             const res = await fetch('/api/generate-script', {
               method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
+              headers,
               body: JSON.stringify(payload),
             });
 
@@ -130,9 +150,15 @@ export default function ScriptPage() {
       }
 
       try {
+        const token = getAuthToken();
+        const headers: HeadersInit = { 'Content-Type': 'application/json' };
+        if (token) {
+          headers['Authorization'] = `Bearer ${token}`;
+        }
+
         const res = await fetch('/api/generate-script', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers,
           body: JSON.stringify(params),
         });
 

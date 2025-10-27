@@ -4,10 +4,18 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { Button } from '@/components/ui/button';
 import { Crown, User, Menu } from 'lucide-react';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 
 const Header = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+
+  useEffect(() => {
+    const token = localStorage.getItem('sb-xncfghdikiqknuruurfh-auth-token');
+    if (token) {
+      setIsLoggedIn(true);
+    }
+  }, []);
 
   return (
     <header className="bg-white/80 backdrop-blur-md sticky top-0 z-50">
@@ -34,14 +42,21 @@ const Header = () => {
                 Upgrade
               </Button>
             </Link>
-            <Link href="/auth">
-              <Button variant="outline">Sign In</Button>
-            </Link>
-            <Link href="/profile">
-              <Button variant="outline" size="icon">
-                <User className="w-4 h-4" />
-              </Button>
-            </Link>
+            {!isLoggedIn && (
+              <Link href="/auth">
+                <Button variant="outline">
+                  <User className="w-4 h-4 mr-2" />
+                  Sign In
+                </Button>
+              </Link>
+            )}
+            {isLoggedIn && (
+              <Link href="/profile">
+                <Button variant="outline" size="icon">
+                  <User className="w-4 h-4" />
+                </Button>
+              </Link>
+            )}
           </div>
 
           {/* Mobile Menu Button */}
@@ -63,15 +78,22 @@ const Header = () => {
                 Upgrade
               </Button>
             </Link>
-            <Link href="/auth" onClick={() => setIsMenuOpen(false)}>
-              <Button variant="ghost" className="w-full justify-start">Sign In</Button>
-            </Link>
-            <Link href="/profile" onClick={() => setIsMenuOpen(false)}>
-              <Button variant="ghost" className="w-full justify-start flex items-center">
-                <User className="w-4 h-4 mr-2" />
-                Profile
-              </Button>
-            </Link>
+            {!isLoggedIn && (
+              <Link href="/auth" onClick={() => setIsMenuOpen(false)}>
+                <Button variant="ghost" className="w-full justify-start">
+                  <User className="w-4 h-4 mr-2" />
+                  Sign In
+                </Button>
+              </Link>
+            )}
+            {isLoggedIn && (
+              <Link href="/profile" onClick={() => setIsMenuOpen(false)}>
+                <Button variant="ghost" className="w-full justify-start flex items-center">
+                  <User className="w-4 h-4 mr-2" />
+                  Profile
+                </Button>
+              </Link>
+            )}
           </div>
         </div>
       )}

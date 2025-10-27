@@ -16,6 +16,23 @@ export class ApiService {
   // Check if we're in production and handle CORS issues
   private static isProduction = process.env.NODE_ENV === 'production';
 
+  private static getAuthToken(): string | null {
+    if (typeof window === 'undefined') {
+      return null;
+    }
+    const tokenData = localStorage.getItem('sb-xncfghdikiqknuruurfh-auth-token');
+    if (tokenData) {
+      try {
+        const parsedToken = JSON.parse(tokenData);
+        return parsedToken.access_token || null;
+      } catch (error) {
+        console.error('Failed to parse auth token:', error);
+        return null;
+      }
+    }
+    return null;
+  }
+
   static async processTopic(topic: string, retryCount = 0): Promise<ProcessTopicResponse> {
     const maxRetries = 2;
     const retryDelay = 5000; // 5 seconds
@@ -31,12 +48,19 @@ export class ApiService {
       
       let response;
       try {
+        const token = this.getAuthToken();
+        const headers: HeadersInit = {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+        };
+
+        if (token) {
+          headers['Authorization'] = `Bearer ${token}`;
+        }
+
         response = await fetch(apiUrl, {
           method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Accept': 'application/json',
-          },
+          headers,
           body: JSON.stringify({ topic }),
           signal: controller.signal,
           mode: 'cors', // Explicitly set CORS mode

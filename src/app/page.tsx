@@ -61,6 +61,7 @@ export default function Home() {
   ];
 
   const handleSearch = (topic: string) => {
+
     if (topic.trim()) {
       router.push(`/search/${encodeURIComponent(topic)}`);
     }

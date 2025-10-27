@@ -1,3 +1,6 @@
+"use client";
+
+import { useRouter } from 'next/navigation';
 import Header from '../../components/Header';
 import Footer from '../../components/Footer';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -5,6 +8,13 @@ import { Button } from '@/components/ui/button';
 import { User, Settings, LogOut, Crown } from 'lucide-react';
 
 export default function Profile() {
+  const router = useRouter();
+
+  const handleSignOut = () => {
+    localStorage.removeItem('sb-xncfghdikiqknuruurfh-auth-token');
+    router.push('/auth');
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-purple-50 via-blue-50 to-indigo-100">
       <Header />
@@ -93,7 +103,11 @@ export default function Profile() {
 
           {/* Account Actions */}
           <div className="mt-8 text-center">
-            <Button variant="outline" className="text-black-600 hover:text-black-800 hover:bg-black-50">
+            <Button
+              variant="outline"
+              className="text-black-600 hover:text-black-800 hover:bg-black-50"
+              onClick={handleSignOut}
+            >
               <LogOut className="w-4 h-4 mr-2" />
               Sign Out
             </Button>

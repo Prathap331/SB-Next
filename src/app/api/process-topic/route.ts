@@ -14,11 +14,18 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    const authHeader = request.headers.get('Authorization');
+    const headers: HeadersInit = {
+      'Content-Type': 'application/json',
+    };
+
+    if (authHeader) {
+      headers['Authorization'] = authHeader;
+    }
+
     const response = await fetch(`${API_URL}/process-topic`, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
+      headers,
       body: JSON.stringify({ topic }),
     });
 
