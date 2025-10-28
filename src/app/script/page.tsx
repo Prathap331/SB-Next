@@ -60,7 +60,6 @@ export default function ScriptPage() {
   const [data, setData] = useState<GeneratedScriptData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [genParams, setGenParams] = useState<GenerationParams | null>(null);
 
   const getAuthToken = (): string | null => {
     const tokenData = localStorage.getItem('sb-xncfghdikiqknuruurfh-auth-token');
@@ -100,7 +99,6 @@ export default function ScriptPage() {
             duration_minutes: duration ? parseInt(duration) : undefined
           };
           // show summary immediately
-          setGenParams(payload);
           try {
             const token = getAuthToken();
             const headers: HeadersInit = { 'Content-Type': 'application/json' };
@@ -121,11 +119,14 @@ export default function ScriptPage() {
 
             const json = await res.json();
             setData(json as GeneratedScriptData);
-            setGenParams(payload);
             setIsLoading(false);
             return;
           } catch (err) {
             const error = err as Error;
+            if (error.message.includes('Not authenticated')) {
+              router.push('/auth');
+              return;
+            }
             console.error('Failed to generate script from URL params:', error);
             setError(error.message || 'Failed to generate script from URL params');
             setIsLoading(false);
@@ -142,7 +143,6 @@ export default function ScriptPage() {
       try {
         params = JSON.parse(paramsJson);
         // show summary immediately
-        setGenParams(params);
       } catch {
         setError('Invalid generation parameters.');
         setIsLoading(false);
@@ -169,13 +169,20 @@ export default function ScriptPage() {
 
         const json = await res.json();
         setData(json as GeneratedScriptData);
-        setGenParams(params);
         // optionally clear params so reload won't re-run
         try {
           sessionStorage.removeItem('generate_params');
         } catch {}
       } catch (err) {
         const error = err as Error;
+        if (error.message.includes('Not authenticated')) {
+          router.push('/auth');
+          return;
+        }
+        if (error.message.includes('Insufficient credits')) {
+          router.push('/pricing');
+          return;
+        }
         console.error('Failed to generate script:', error);
         setError(error.message || 'Failed to generate script');
       } finally {
@@ -184,7 +191,7 @@ export default function ScriptPage() {
     };
 
     run();
-  }, []);
+  }, [router]);
 
   const [showSourcesDialog, setShowSourcesDialog] = useState(false);
 
@@ -301,7 +308,7 @@ export default function ScriptPage() {
             <Card className="shadow-lg">
               <CardHeader>
                 <CardTitle className="text-lg">Script Structure Flow</CardTitle>
-                <CardDescription>Visual representation of your script&apos;s flow and structure</CardDescription>
+                <CardDescription>{`Visual representation of your script's flow and structure`}</CardDescription>
               </CardHeader>
               <CardContent>
                 <ScrollArea className="h-[400px]">

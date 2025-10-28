@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { Mail, Lock, User, Eye, EyeOff } from 'lucide-react';
 import { supabase } from '@/lib/supabaseClient'; // ✅ ensure this file exists and exports a Supabase client
+import { ApiService } from '@/services/api';
 
 export default function AuthForm() {
   const [isSignUp, setIsSignUp] = useState(false);
@@ -41,15 +42,12 @@ export default function AuthForm() {
           return;
         }
 
-        const { error } = await supabase.auth.signUp({
+        await ApiService.signUp({
           email: formData.email,
           password: formData.password,
-          options: {
-            data: { full_name: formData.name }
-          }
+          full_name: formData.name,
         });
 
-        if (error) throw error;
         setMessage({ text: '✅ Sign up successful! Check your email to confirm.', type: 'success' });
       } else {
         const { error } = await supabase.auth.signInWithPassword({
@@ -60,11 +58,12 @@ export default function AuthForm() {
         if (error) throw error;
 
         setMessage({ text: '✅ Sign in successful!', type: 'success' });
-        router.push('/');
+        router.back();
         router.refresh();
       }
-    } catch (error: any) {
-      setMessage({ text: error.message || 'Something went wrong.', type: 'error' });
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Something went wrong.';
+      setMessage({ text: message, type: 'error' });
     } finally {
       setIsLoading(false);
     }
@@ -78,8 +77,9 @@ export default function AuthForm() {
         provider: 'google',
       });
       if (error) throw error;
-    } catch (error: any) {
-      setMessage({ text: error.message || 'Google Sign-in failed.', type: 'error' });
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Google Sign-in failed.';
+      setMessage({ text: message, type: 'error' });
     } finally {
       setIsLoading(false);
     }

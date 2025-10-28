@@ -9,6 +9,47 @@ export interface ProcessTopicResponse {
   descriptions: string[];
 }
 
+export interface SignUpRequest {
+  email: string;
+  password: string;
+  full_name: string;
+}
+
+export interface SignUpResponse {
+  id: string;
+  aud: string;
+  role: string;
+  email: string;
+  email_confirmed_at: string;
+  phone: string;
+  confirmed_at: string;
+  last_sign_in_at: string;
+  app_metadata: {
+    provider: string;
+    providers: string[];
+  };
+  user_metadata: {
+    full_name: string;
+  };
+  identities: {
+    identity_id: string;
+    id: string;
+    user_id: string;
+    identity_data: {
+      email: string;
+      email_verified: boolean;
+      phone_verified: boolean;
+      sub: string;
+    };
+    provider: string;
+    last_sign_in_at: string;
+    created_at: string;
+    updated_at: string;
+  }[];
+  created_at: string;
+  updated_at: string;
+}
+
 export class ApiService {
   // Use Next.js API routes in both development and production
   private static readonly BASE_URL = '/api';
@@ -175,5 +216,41 @@ export class ApiService {
       ideas,
       descriptions
     };
+  }
+
+  static async signUp(request: SignUpRequest): Promise<SignUpResponse> {
+    const url = `https://xncfghdikiqknuruurfh.supabase.co/auth/v1/signup`;
+    const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+
+    if (!anonKey) {
+      throw new Error('Supabase anon key is not defined.');
+    }
+
+    try {
+      const response = await fetch(url, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'apikey': anonKey,
+        },
+        body: JSON.stringify({
+          email: request.email,
+          password: request.password,
+          data: {
+            full_name: request.full_name,
+          },
+        }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error_description || 'Sign-up failed.');
+      }
+
+      return await response.json();
+    } catch (error) {
+      console.error('Sign-up error:', error);
+      throw error;
+    }
   }
 }

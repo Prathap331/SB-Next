@@ -52,7 +52,7 @@ const saveToCache = (topic: string, data: CacheItem) => {
   // Save to localStorage
   try {
     localStorage.setItem(`topic_${topic}`, JSON.stringify(data));
-  } catch (_unused) {
+  } catch {
     // If localStorage is full, clean up old items
     const keys = Object.keys(localStorage);
     const topicKeys = keys.filter(k => k.startsWith('topic_'));
@@ -269,10 +269,6 @@ export default function SearchTopicPage() {
   };
 
   const filtered = scriptIdeas.filter((s) => selectedCategory === 'all' || s.category === selectedCategory);
-
-  const handleStatementClick = (id: number) => {
-    router.push(`/script/${id}`);
-  };
 
   const handleGenerateScript = async (idea: ScriptIdea) => {
     if (!videoLengths[idea.id]) {
