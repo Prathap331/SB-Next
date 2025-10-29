@@ -242,9 +242,9 @@ export default function ScriptPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-50 via-blue-50 to-indigo-100">
+    <div className="min-h-screen bg-[#E9EBF0]/20">
       <Header />
-      <main className="container mx-auto px-4 py-8">
+      <main className="container mx-auto px-16 py-8">
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-gray-900 mb-2">{data.title || 'Generated Script'}</h1>
           <p className="text-gray-600">Generated script with comprehensive research and strategic structure</p>
@@ -290,14 +290,14 @@ export default function ScriptPage() {
               </div>
             </div>
 
-            <div>
+            {/* <div>
               <h4 className="font-semibold text-gray-900 mb-3">Keywords</h4>
               <div className="flex flex-wrap gap-2">
                 {data.metrics?.keywords?.map((k, i) => (
                   <Badge key={i} variant="secondary" className="bg-blue-100 text-gray-800 px-4 py-2">{k}</Badge>
                 ))}
               </div>
-            </div>
+            </div> */}
           </CardContent>
         </Card>
 

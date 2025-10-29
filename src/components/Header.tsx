@@ -18,8 +18,8 @@ const Header = () => {
   }, []);
 
   return (
-    <header className="bg-white/80 backdrop-blur-md sticky top-0 z-50">
-      <div className="container mx-auto lg:px-16 py-4">
+    <header className="bg-white backdrop-blur-md sticky top-0 z-50">
+      <div className="container mx-auto lg:px-16 py-3">
         <div className="flex items-center justify-between">
           {/* Logo */}
           <Link href="/" className="flex items-center space-x-2 hover:opacity-80 transition-opacity">
@@ -45,7 +45,6 @@ const Header = () => {
             {!isLoggedIn && (
               <Link href="/auth">
                 <Button variant="outline">
-                  <User className="w-4 h-4 mr-2" />
                   Sign In
                 </Button>
               </Link>

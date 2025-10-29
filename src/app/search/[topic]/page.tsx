@@ -297,7 +297,7 @@ export default function SearchTopicPage() {
       />
 
 
-      <div className="container mx-auto px-4 py-8">
+      <div className="container mx-auto px-16 py-8">
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-gray-900 mb-2">
             Script Ideas for:{" "}
@@ -311,15 +311,9 @@ export default function SearchTopicPage() {
         <div className="grid lg:grid-cols-4 gap-8">
           <div className="lg:col-span-1">
             <Card className="sticky top-24 shadow-lg">
-              <CardHeader>
-                <CardTitle className="flex items-center">
-                  <TrendingUp className="w-5 h-5 mr-2" />
-                  Filters
-                </CardTitle>
-              </CardHeader>
               <CardContent className="space-y-6">
                 <div>
-                  <label className="text-sm font-medium text-gray-700 mb-3 block">Category</label>
+                  <label className="text-sm font-medium text-gray-700 mb-3 block pt-6">Category</label>
                   <div className="space-y-2">
                     {['all', 'Technology', 'Social Impact', 'Economic Analysis', 'Historical', 'Future Analysis'].map((category) => (
                       <Button

@@ -94,7 +94,7 @@ export default function AuthForm() {
     'w-full py-3 flex items-center justify-center space-x-2 border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50';
 
   return (
-    <div className="shadow-xl border-0 bg-white/90 backdrop-blur-sm max-w-md mx-auto mt-8 rounded-lg">
+    <div className="shadow-xl border-0 bg-white backdrop-blur-sm max-w-md mx-auto mt-8 rounded-lg">
       <div className="text-center p-6">
         <h2 className="text-2xl font-bold">
           {isSignUp ? 'Create Account' : 'Welcome Back'}

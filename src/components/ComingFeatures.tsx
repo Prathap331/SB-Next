@@ -21,19 +21,19 @@ const ComingFeatures = () => {
           {/* AI Generated Images */}
           <Card className="shadow-xl bg-[#1a1a1a] backdrop-blur-sm border-0 flex flex-col justify-center items-center py-12">
             <CardHeader className="text-center">
-              <CardTitle className="text-5xl text-white">AI Generated Images</CardTitle>
+              <CardTitle className="text-6xl text-white">AI Generated Images</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4 pl-32">
               <div className="space-y-3">
                 <div className="flex items-start space-x-3">
-                  <Sparkles className="w-5 h-5 text-black-600 mt-0.5 flex-shrink-0" />
+                  <Sparkles className="text-white w-5 h-5 text-black-600 mt-0.5 flex-shrink-0" />
                   <div>
                     <h4 className="font-semibold text-xl text-white">Custom Scene Generation</h4>
                     <p className="text-white text-md">Generate images that perfectly match your script&apos;s narrative and tone</p>
                   </div>
                 </div>
                 <div className="flex items-start space-x-3">
-                  <Sparkles className="w-5 h-5 text-black-600 mt-0.5 flex-shrink-0" />
+                  <Sparkles className="text-white w-5 h-5 text-black-600 mt-0.5 flex-shrink-0" />
                   <div>
                     <h4 className="font-semibold text-xl text-white">Character Visualization</h4>
                     <p className="text-md text-white">Bring your characters to life with AI-generated portraits and scenes</p>
@@ -46,19 +46,19 @@ const ComingFeatures = () => {
           {/* AI Generated Videos */}
           <Card className="shadow-xl bg-[#1a1a1a] backdrop-blur-sm border-0 flex flex-col justify-center items-center py-12">
             <CardHeader className="text-center">
-              <CardTitle className="text-5xl text-white">AI Generated Videos</CardTitle>
+              <CardTitle className="text-6xl text-white">AI Generated Videos</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4 pl-32">
               <div className="space-y-3">
                 <div className="flex items-start space-x-3">
-                  <Sparkles className="w-5 h-5 text-black-600 mt-0.5 flex-shrink-0" />
+                  <Sparkles className="text-white w-5 h-5 text-black-600 mt-0.5 flex-shrink-0" />
                   <div>
                     <h4 className="font-semibold text-xl text-white">Custom Scene Generation</h4>
                     <p className="text-white text-md">Generate images that perfectly match your script&apos;s narrative and tone</p>
                   </div>
                 </div>
                 <div className="flex items-start space-x-3">
-                  <Sparkles className="w-5 h-5 text-black-600 mt-0.5 flex-shrink-0" />
+                  <Sparkles className="text-white w-5 h-5 text-black-600 mt-0.5 flex-shrink-0" />
                   <div>
                     <h4 className="font-semibold text-xl text-white">Character Visualization</h4>
                     <p className="text-md text-white">Bring your characters to life with AI-generated portraits and scenes</p>
