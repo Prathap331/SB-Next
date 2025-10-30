@@ -6,9 +6,9 @@ const Footer = () => {
   return (
     <footer className="bg-[#1a1a1a] text-white py-12 mt-16">
       <div className="container mx-auto px-16">
-        <div className="grid md:grid-cols-4 gap-8">
+        <div className="flex flex-col md:flex-row justify-around gap-12">
           {/* Company Details */}
-          <div>
+          <div className="flex-1 min-w-[200px]">
             <Link href="/" className="inline-block hover:opacity-90 transition-opacity">
               <Image
                 src="/White logo.png"
@@ -28,7 +28,7 @@ const Footer = () => {
           </div>
 
           {/* Address */}
-          <div>
+          <div className="flex-1 min-w-[200px]">
             <h4 className="text-lg font-semibold mb-4">Address</h4>
             <div className="text-gray-300 space-y-2">
               <p>Plot no. MIG 891,</p>
@@ -39,7 +39,7 @@ const Footer = () => {
           </div>
 
           {/* Contact Details */}
-          <div>
+          <div className="flex-1 min-w-[200px]">
             <h4 className="text-lg font-semibold mb-4">Contact Us</h4>
             <div className="space-y-3">
               <a href="mailto:support@storybit.tech" className="flex items-center space-x-2 text-gray-300 hover:text-white">
@@ -58,13 +58,12 @@ const Footer = () => {
           </div>
 
           {/* Quick Links */}
-          <div>
+          <div className="flex-1 min-w-[200px]">
             <h4 className="text-lg font-semibold mb-4">Quick Links</h4>
             <div className="space-y-2">
-              <Link href="/privacy" className="block text-gray-300 hover:text-white">Privacy Policy</Link>
-              <Link href="/terms" className="block text-gray-300 hover:text-white">Terms of Service</Link>
-              <Link href="/support" className="block text-gray-300 hover:text-white">Support</Link>
-              <a href="https://docs.storybit.tech" target="_blank" rel="noreferrer" className="block text-gray-300 hover:text-white">Documentation</a>
+              <Link href="/terms-and-conditions" className="block text-gray-300 hover:text-white">Terms and conditions</Link>
+              <Link href="/privacy-policy" className="block text-gray-300 hover:text-white">Privacy policy</Link>
+              <Link href="/cancellation-and-refund-policy" className="block text-gray-300 hover:text-white">Cancellation & Refund policy</Link>
             </div>
           </div>
         </div>

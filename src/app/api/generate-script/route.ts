@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 
+export const maxDuration = 300; // 5 minutes
+
 const API_URL = 'https://sb-u864.onrender.com/generate-script';
 
 export async function POST(request: NextRequest) {
@@ -23,8 +25,20 @@ export async function POST(request: NextRequest) {
 
     if (!response.ok) {
       const errorText = await response.text();
+      console.error('External API Error:', errorText); // Log the full error
+      let errorMessage = 'Failed to generate script due to an external API error.';
+      try {
+        const errorJson = JSON.parse(errorText);
+        // Prefer a more specific error message if available
+        errorMessage = errorJson.detail || errorJson.error || errorMessage;
+      } catch (e) {
+        // If the error is not JSON, use the raw text if it's not too long
+        if (errorText.length < 500) {
+          errorMessage = errorText;
+        }
+      }
       return NextResponse.json(
-        { error: `API request failed: ${errorText}` },
+        { error: errorMessage },
         { status: response.status }
       );
     }

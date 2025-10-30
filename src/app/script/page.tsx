@@ -60,6 +60,8 @@ export default function ScriptPage() {
   const [data, setData] = useState<GeneratedScriptData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [shouldRender, setShouldRender] = useState(false);
+  const [pageTitle, setPageTitle] = useState('Generated Script');
 
   const getAuthToken = (): string | null => {
     const tokenData = localStorage.getItem('sb-xncfghdikiqknuruurfh-auth-token');
@@ -76,6 +78,13 @@ export default function ScriptPage() {
   };
 
   useEffect(() => {
+    const token = getAuthToken();
+    if (!token) {
+      router.push('/auth');
+      return;
+    }
+    setShouldRender(true);
+
     const run = async () => {
       setIsLoading(true);
       setError(null);
@@ -113,8 +122,8 @@ export default function ScriptPage() {
             });
 
             if (!res.ok) {
-              const txt = await res.text();
-              throw new Error(txt || 'API request failed');
+              const errorData = await res.json();
+              throw new Error(errorData.error || 'API request failed');
             }
 
             const json = await res.json();
@@ -142,6 +151,9 @@ export default function ScriptPage() {
       let params;
       try {
         params = JSON.parse(paramsJson);
+        if (params.ideaTitle) {
+          setPageTitle(params.ideaTitle);
+        }
         // show summary immediately
       } catch {
         setError('Invalid generation parameters.');
@@ -163,8 +175,8 @@ export default function ScriptPage() {
         });
 
         if (!res.ok) {
-          const txt = await res.text();
-          throw new Error(txt || 'API request failed');
+          const errorData = await res.json();
+          throw new Error(errorData.error || 'API request failed');
         }
 
         const json = await res.json();
@@ -195,9 +207,13 @@ export default function ScriptPage() {
 
   const [showSourcesDialog, setShowSourcesDialog] = useState(false);
 
+  if (!shouldRender) {
+    return null;
+  }
+
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-purple-50 via-blue-50 to-indigo-100">
+      <div className="min-h-screen bg-[#E9EBF0]/20">
         <Header />
         <main className="container mx-auto px-4 py-8 flex items-center justify-center">
           <div className="flex flex-col items-center gap-4">
@@ -246,7 +262,7 @@ export default function ScriptPage() {
       <Header />
       <main className="container mx-auto px-16 py-8">
         <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">{data.title || 'Generated Script'}</h1>
+          <h1 className="text-3xl font-bold text-gray-900 mb-2">{data.title || pageTitle}</h1>
           <p className="text-gray-600">Generated script with comprehensive research and strategic structure</p>
         </div>
 

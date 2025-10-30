@@ -1,5 +1,5 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Sparkles } from 'lucide-react';
+import { Sparkles, Image, Video } from 'lucide-react';
 
 const ComingFeatures = () => {
   return (
@@ -21,9 +21,12 @@ const ComingFeatures = () => {
           {/* AI Generated Images */}
           <Card className="shadow-xl bg-[#1a1a1a] backdrop-blur-sm border-0 flex flex-col justify-center items-center py-12">
             <CardHeader className="text-center">
-              <CardTitle className="text-6xl text-white">AI Generated Images</CardTitle>
+              <CardTitle className="text-6xl text-white flex items-center">
+                <Image size={48} className="mr-4" />
+                AI Generated Images
+              </CardTitle>
             </CardHeader>
-            <CardContent className="space-y-4 pl-32">
+            <CardContent className="space-y-4 pl-20">
               <div className="space-y-3">
                 <div className="flex items-start space-x-3">
                   <Sparkles className="text-white w-5 h-5 text-black-600 mt-0.5 flex-shrink-0" />
@@ -46,9 +49,12 @@ const ComingFeatures = () => {
           {/* AI Generated Videos */}
           <Card className="shadow-xl bg-[#1a1a1a] backdrop-blur-sm border-0 flex flex-col justify-center items-center py-12">
             <CardHeader className="text-center">
-              <CardTitle className="text-6xl text-white">AI Generated Videos</CardTitle>
+              <CardTitle className="text-6xl text-white flex items-center">
+                <Video size={48} className="mr-4" />
+                AI Generated Videos
+              </CardTitle>
             </CardHeader>
-            <CardContent className="space-y-4 pl-32">
+            <CardContent className="space-y-4 pl-20">
               <div className="space-y-3">
                 <div className="flex items-start space-x-3">
                   <Sparkles className="text-white w-5 h-5 text-black-600 mt-0.5 flex-shrink-0" />
