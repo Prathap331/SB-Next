@@ -229,7 +229,7 @@ export default function ScriptPage() {
 
   if (error) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-purple-50 via-blue-50 to-indigo-100">
+      <div className="min-h-screen bg-[#E9EBF0]/20">
         <Header />
         <main className="container mx-auto px-4 py-8 flex items-center justify-center">
           <div className="flex flex-col items-center gap-4">
@@ -244,7 +244,7 @@ export default function ScriptPage() {
 
   if (!data) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-purple-50 via-blue-50 to-indigo-100">
+      <div className="min-h-screen bg-[#E9EBF0]/20">
         <Header />
         <main className="container mx-auto px-4 py-8 flex items-center justify-center">
           <div className="flex flex-col items-center gap-4">

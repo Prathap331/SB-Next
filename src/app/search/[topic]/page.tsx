@@ -284,7 +284,7 @@ export default function SearchTopicPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-50 via-blue-50 to-indigo-100">
+    <div className="min-h-screen bg-[#E9EBF0]/20">
       <Header />
 
       <ScriptGenerationModal 
