@@ -22,6 +22,7 @@ const ComingFeatures = () => {
           <Card className="shadow-xl bg-[#1a1a1a] backdrop-blur-sm border-0 flex flex-col justify-center items-center py-12">
             <CardHeader className="text-center">
               <CardTitle className="text-6xl text-white flex items-center">
+                {/* eslint-disable-next-line jsx-a11y/alt-text */}
                 <Image size={48} className="mr-4" />
                 AI Generated Images
               </CardTitle>

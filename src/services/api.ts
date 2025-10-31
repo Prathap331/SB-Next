@@ -50,12 +50,61 @@ export interface SignUpResponse {
   updated_at: string;
 }
 
+export interface GenerationParams {
+  topic?: string;
+  ideaTitle?: string;
+  duration_minutes?: number;
+  length?: number;
+}
+
+export type GeneratedScriptData = {
+  script: string;
+  estimated_word_count: number;
+  source_urls: string[];
+  analysis: {
+    examples_count: number;
+    research_facts_count: number;
+    proverbs_count: number;
+    emotional_depth: string;
+  };
+  title?: string;
+  metrics?: {
+    totalWords: number;
+    videoLength: number;
+    emotionalDepth: number;
+    generalExamples: number;
+    proverbs: number;
+    historicalExamples: number;
+    historicalFacts: number;
+    researchFacts: number;
+    lawsIncluded: number;
+    keywords: string[];
+  };
+  structure?: Array<{
+    id: string;
+    title: string;
+    duration: string;
+    words: number;
+  }>;
+  synopsis?: string;
+};
+
 export class ApiService {
   // Use Next.js API routes in both development and production
   private static readonly BASE_URL = '/api';
   
   // Check if we're in production and handle CORS issues
   private static isProduction = process.env.NODE_ENV === 'production';
+
+  private static handleUnauthorized(): void {
+    if (typeof window !== 'undefined') {
+      // Clear authentication tokens from localStorage
+      localStorage.removeItem('sb-xncfghdikiqknuruurfh-auth-token');
+      
+      // Redirect to the authentication page
+      window.location.href = '/auth';
+    }
+  }
 
   private static getAuthToken(): string | null {
     if (typeof window === 'undefined') {
@@ -146,6 +195,11 @@ export class ApiService {
         if (response.status === 500) {
           throw new Error('Internal server error (500). The API server encountered an error processing your request.');
         }
+
+        if (response.status === 401) {
+          this.handleUnauthorized();
+          throw new Error('Unauthorized');
+        }
         
         throw new Error(`API request failed: ${response.status} ${response.statusText}. ${errorText}`);
       }
@@ -176,6 +230,144 @@ export class ApiService {
         if (this.isProduction) {
           console.warn('CORS error in production, falling back to sample data');
           return this.getFallbackData(topic);
+        }
+        throw new Error('CORS error: The API server needs to allow requests from this domain. Please check your backend CORS configuration.');
+      }
+      
+      throw error;
+    }
+  }
+
+  static async generateScript(params: GenerationParams, retryCount = 0): Promise<GeneratedScriptData> {
+    const maxRetries = 2;
+    const retryDelay = 5000; // 5 seconds
+    
+    try {
+      const apiUrl = `${this.BASE_URL}/generate-script`;
+      console.log('Making API request to:', apiUrl);
+      console.log('Request payload:', params);
+      
+      // Create AbortController for timeout
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 120000); // 2 minutes timeout
+      
+      let response;
+      try {
+        const token = this.getAuthToken();
+        const headers: HeadersInit = {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+        };
+
+        if (token) {
+          headers['Authorization'] = `Bearer ${token}`;
+        }
+
+        response = await fetch(apiUrl, {
+          method: 'POST',
+          headers,
+          body: JSON.stringify(params),
+          signal: controller.signal,
+          mode: 'cors', // Explicitly set CORS mode
+        });
+      } catch (fetchError) {
+        // Handle CORS errors specifically
+        if (this.isProduction && fetchError instanceof TypeError && fetchError.message.includes('Failed to fetch')) {
+          console.warn('CORS error detected in production, returning empty script');
+          return { 
+            script: 'Error generating script due to network issues.', 
+            estimated_word_count: 0, 
+            source_urls: [], 
+            analysis: {
+              examples_count: 0,
+              research_facts_count: 0,
+              proverbs_count: 0,
+              emotional_depth: 'N/A'
+            } 
+          };
+        }
+        throw fetchError;
+      }
+      
+      clearTimeout(timeoutId);
+      console.log('API Response status:', response.status);
+      console.log('API Response headers:', Object.fromEntries(response.headers.entries()));
+
+      // Handle 502 Bad Gateway with retry
+      if (response.status === 502 && retryCount < maxRetries) {
+        await new Promise(resolve => setTimeout(resolve, retryDelay));
+        return this.generateScript(params, retryCount + 1);
+      }
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('API Error Response:', errorText);
+        console.error('Full response:', response);
+        
+        // Special handling for different error types
+        if (response.status === 405) {
+          throw new Error('Method Not Allowed (405). The API endpoint may not support POST requests or the endpoint URL is incorrect. Please check your API configuration.');
+        }
+        
+        if (response.status === 502) {
+          throw new Error('Server temporarily unavailable (502 Bad Gateway). The API server may be starting up or overloaded. Please try again in a few minutes.');
+        }
+        
+        if (response.status === 404) {
+          throw new Error('API endpoint not found (404). Please check if the API URL is correct and the endpoint exists.');
+        }
+        
+        if (response.status === 500) {
+          throw new Error('Internal server error (500). The API server encountered an error processing your request.');
+        }
+
+        if (response.status === 401) {
+          this.handleUnauthorized();
+          throw new Error('Unauthorized');
+        }
+        
+        throw new Error(`API request failed: ${response.status} ${response.statusText}. ${errorText}`);
+      }
+
+      return await response.json();
+    } catch (error) {
+      if (error instanceof Error && error.name === 'AbortError') {
+        throw new Error('Request timeout - API took too long to respond (up to 2 minutes)');
+      }
+      
+      // Handle CORS and network errors
+      if (error instanceof TypeError && error.message.includes('Failed to fetch')) {
+        if (this.isProduction) {
+          console.warn('CORS/Network error in production, returning empty script');
+          return { 
+            script: 'Error generating script due to network issues.', 
+            estimated_word_count: 0, 
+            source_urls: [], 
+            analysis: {
+              examples_count: 0,
+              research_facts_count: 0,
+              proverbs_count: 0,
+              emotional_depth: 'N/A'
+            } 
+          };
+        }
+        throw new Error('Network error: Unable to connect to the API server. This might be a CORS issue or the server is down.');
+      }
+      
+      if (error instanceof Error && error.message.includes('CORS')) {
+        if (this.isProduction) {
+          console.warn('CORS error in production, returning empty script');
+          return { 
+            script: 'Error generating script due to network issues.', 
+            estimated_word_count: 0, 
+            source_urls: [], 
+            analysis: {
+              examples_count: 0,
+              research_facts_count: 0,
+              proverbs_count: 0,
+              emotional_depth: 'N/A'
+            } 
+          };
         }
         throw new Error('CORS error: The API server needs to allow requests from this domain. Please check your backend CORS configuration.');
       }

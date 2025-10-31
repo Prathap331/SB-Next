@@ -31,7 +31,7 @@ export async function POST(request: NextRequest) {
         const errorJson = JSON.parse(errorText);
         // Prefer a more specific error message if available
         errorMessage = errorJson.detail || errorJson.error || errorMessage;
-      } catch (e) {
+      } catch {
         // If the error is not JSON, use the raw text if it's not too long
         if (errorText.length < 500) {
           errorMessage = errorText;

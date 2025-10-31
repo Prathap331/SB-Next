@@ -10,50 +10,11 @@ import {
 // Note: GeneratedScript component exists in the project but is not used in this detailed view
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
-
-interface GenerationParams {
-  topic?: string;
-  ideaTitle?: string;
-  duration_minutes?: number;
-  length?: number;
-}
-
-type GeneratedScriptData = {
-  script: string;
-  estimated_word_count: number;
-  source_urls: string[];
-  analysis: {
-    examples_count: number;
-    research_facts_count: number;
-    proverbs_count: number;
-    emotional_depth: string;
-  };
-  title?: string;
-  metrics?: {
-    totalWords: number;
-    videoLength: number;
-    emotionalDepth: number;
-    generalExamples: number;
-    proverbs: number;
-    historicalExamples: number;
-    historicalFacts: number;
-    researchFacts: number;
-    lawsIncluded: number;
-    keywords: string[];
-  };
-  structure?: Array<{
-    id: string;
-    title: string;
-    duration: string;
-    words: number;
-  }>;
-  synopsis?: string;
-};
+import { ApiService, GenerationParams, GeneratedScriptData } from '@/services/api';
 
 export default function ScriptPage() {
   const router = useRouter();
@@ -63,22 +24,8 @@ export default function ScriptPage() {
   const [shouldRender, setShouldRender] = useState(false);
   const [pageTitle, setPageTitle] = useState('Generated Script');
 
-  const getAuthToken = (): string | null => {
-    const tokenData = localStorage.getItem('sb-xncfghdikiqknuruurfh-auth-token');
-    if (tokenData) {
-      try {
-        const parsedToken = JSON.parse(tokenData);
-        return parsedToken.access_token || null;
-      } catch (error) {
-        console.error('Failed to parse auth token:', error);
-        return null;
-      }
-    }
-    return null;
-  };
-
   useEffect(() => {
-    const token = getAuthToken();
+    const token = localStorage.getItem('sb-xncfghdikiqknuruurfh-auth-token');
     if (!token) {
       router.push('/auth');
       return;
@@ -109,24 +56,7 @@ export default function ScriptPage() {
           };
           // show summary immediately
           try {
-            const token = getAuthToken();
-            const headers: HeadersInit = { 'Content-Type': 'application/json' };
-            if (token) {
-              headers['Authorization'] = `Bearer ${token}`;
-            }
-
-            const res = await fetch('/api/generate-script', {
-              method: 'POST',
-              headers,
-              body: JSON.stringify(payload),
-            });
-
-            if (!res.ok) {
-              const errorData = await res.json();
-              throw new Error(errorData.error || 'API request failed');
-            }
-
-            const json = await res.json();
+            const json = await ApiService.generateScript(payload);
             setData(json as GeneratedScriptData);
             setIsLoading(false);
             return;
@@ -162,24 +92,7 @@ export default function ScriptPage() {
       }
 
       try {
-        const token = getAuthToken();
-        const headers: HeadersInit = { 'Content-Type': 'application/json' };
-        if (token) {
-          headers['Authorization'] = `Bearer ${token}`;
-        }
-
-        const res = await fetch('/api/generate-script', {
-          method: 'POST',
-          headers,
-          body: JSON.stringify(params),
-        });
-
-        if (!res.ok) {
-          const errorData = await res.json();
-          throw new Error(errorData.error || 'API request failed');
-        }
-
-        const json = await res.json();
+        const json = await ApiService.generateScript(params);
         setData(json as GeneratedScriptData);
         // optionally clear params so reload won't re-run
         try {
