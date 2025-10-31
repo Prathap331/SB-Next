@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
 
-export const runtime = 'edge';
 export const maxDuration = 300;
 
 const API_URL = process.env.API_URL || 'https://sb-u864.onrender.com';
