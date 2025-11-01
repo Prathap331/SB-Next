@@ -97,7 +97,9 @@ export default function ScriptPage() {
         // optionally clear params so reload won't re-run
         try {
           sessionStorage.removeItem('generate_params');
-        } catch {}
+        } catch {
+          // Ignore sessionStorage errors
+        }
       } catch (err) {
         const error = err as Error;
         if (error.message.includes('Not authenticated')) {

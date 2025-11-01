@@ -20,7 +20,7 @@ interface ScriptGenerationModalProps {
   onClose: () => void;
   topic: string;
   initialDuration: string;
-  onGenerate: (scriptParams: ScriptGenerationParams) => Promise<void>;
+  onGenerate: (params: ScriptGenerationParams) => Promise<void>;
   isGenerating?: boolean;
 }
 
