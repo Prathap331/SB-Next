@@ -132,9 +132,12 @@ export class ApiService {
       console.log('Making API request to:', apiUrl);
       console.log('Request payload:', { topic });
       
-      // Create AbortController for timeout
+      // Create AbortController for timeout (5 minutes = 300000ms)
       const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 120000); // 2 minutes timeout
+      const timeoutId = setTimeout(() => {
+        console.error('[processTopic] Request timeout after 5 minutes');
+        controller.abort();
+      }, 300000); // 5 minutes timeout
       
       let response;
       try {
@@ -162,9 +165,10 @@ export class ApiService {
           return this.getFallbackData(topic);
         }
         throw fetchError;
+      } finally {
+        // Always clear timeout
+        clearTimeout(timeoutId);
       }
-      
-      clearTimeout(timeoutId);
       console.log('API Response status:', response.status);
       console.log('API Response headers:', Object.fromEntries(response.headers.entries()));
 
@@ -212,8 +216,8 @@ export class ApiService {
         descriptions: data.descriptions || [],
       };
     } catch (error) {
-      if (error instanceof Error && error.name === 'AbortError') {
-        throw new Error('Request timeout - API took too long to respond (up to 2 minutes)');
+      if (error instanceof Error && (error.name === 'AbortError' || error.message.includes('aborted'))) {
+        throw new Error('Request timeout - API took too long to respond (up to 5 minutes). Please try again or contact support if the issue persists.');
       }
       
       // Handle CORS and network errors
@@ -247,9 +251,12 @@ export class ApiService {
       console.log('Making API request to:', apiUrl);
       console.log('Request payload:', params);
       
-      // Create AbortController for timeout
+      // Create AbortController for timeout (5 minutes = 300000ms)
       const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 120000); // 2 minutes timeout
+      const timeoutId = setTimeout(() => {
+        console.error('[generateScript] Request timeout after 5 minutes');
+        controller.abort();
+      }, 300000); // 5 minutes timeout
       
       let response;
       try {
@@ -287,9 +294,10 @@ export class ApiService {
           };
         }
         throw fetchError;
+      } finally {
+        // Always clear timeout
+        clearTimeout(timeoutId);
       }
-      
-      clearTimeout(timeoutId);
       console.log('API Response status:', response.status);
       console.log('API Response headers:', Object.fromEntries(response.headers.entries()));
 
@@ -331,8 +339,8 @@ export class ApiService {
 
       return await response.json();
     } catch (error) {
-      if (error instanceof Error && error.name === 'AbortError') {
-        throw new Error('Request timeout - API took too long to respond (up to 2 minutes)');
+      if (error instanceof Error && (error.name === 'AbortError' || error.message.includes('aborted'))) {
+        throw new Error('Request timeout - API took too long to respond (up to 5 minutes). Please try again or contact support if the issue persists.');
       }
       
       // Handle CORS and network errors

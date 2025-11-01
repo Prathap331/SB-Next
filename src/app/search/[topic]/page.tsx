@@ -184,7 +184,7 @@ export default function SearchTopicPage() {
       setError(null);
       setScriptIdeas([]);
 
-      const maxWaitMs = 120000; // 2 minutes
+      const maxWaitMs = 300000; // 5 minutes
       const retryDelayMs = 5000;
 
       while (!isCancelled) {
@@ -214,7 +214,7 @@ export default function SearchTopicPage() {
             continue;
           }
 
-          if (elapsed > 120000 && !isCancelled) { // 120 seconds timeout
+          if (elapsed > 300000 && !isCancelled) { // 5 minutes timeout
             setError("The server is taking a long time to respond. You can wait or try refreshing the page.");
           }
 
@@ -349,7 +349,7 @@ export default function SearchTopicPage() {
                     <div>
                       <h3 className="text-lg font-semibold text-gray-900 mb-2">Generating Script Ideas</h3>
                       <p className="text-gray-600">Our AI is analyzing &quot;{topic}&quot; and creating personalized script ideas for you...</p>
-                      <p className="text-sm text-gray-500 mt-2">This may take up to 2 minutes</p>
+                      <p className="text-sm text-gray-500 mt-2">This may take up to 5 minutes</p>
                     </div>
                   </div>
                 </CardContent>

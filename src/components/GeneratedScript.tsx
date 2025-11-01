@@ -25,73 +25,97 @@ export function GeneratedScript({
   analysis,
 }: GeneratedScriptProps) {
   // Helper: convert plain text into nodes with formatting rules
+  // Format: *** becomes <hr/>, *word* becomes <strong>word</strong>
   const renderScriptWithFormatting = (text: string): React.ReactNode[] => {
     const nodes: React.ReactNode[] = [];
     if (!text) return nodes;
 
-    // Split by triple-asterisks '***' to inject horizontal rules
-    const parts = text.split(/\*\*\*/);
+    // First, split by triple asterisks (***) to create sections separated by <hr/>
+    const sections = text.split(/\*\*\*/);
 
-    parts.forEach((part, partIndex) => {
-      // Parse inline **bold** and *semibold* (process double first)
-      const inlineNodes: React.ReactNode[] = [];
-      const regex = /\*\*(.+?)\*\*|\*(.+?)\*/g;
+    sections.forEach((section, sectionIndex) => {
+      if (!section) {
+        // Empty section, just add an hr (will happen between consecutive ***)
+        if (sectionIndex < sections.length - 1) {
+          nodes.push(<hr key={`hr-${sectionIndex}`} className="my-6 border-gray-200" />);
+        }
+        return;
+      }
+
+      // Process each section for single asterisk patterns (*word* -> <strong>word</strong>)
+      const parts: React.ReactNode[] = [];
       let lastIndex = 0;
+      let keyCounter = 0;
+
+      // Match *word* pattern (but not *** since we already split on that)
+      // Pattern: * followed by one or more non-asterisk characters, followed by *
+      const singleAsteriskRegex = /\*([^*\n]+?)\*/g;
       let match: RegExpExecArray | null;
-      let inlineKey = 0;
 
-      const pushText = (s: string) => {
-        if (!s) return;
-        // preserve newlines
-        const lines = s.split('\n');
-        lines.forEach((line, idx) => {
-          if (line) inlineNodes.push(line);
-          if (idx < lines.length - 1) inlineNodes.push(<br key={`br-${partIndex}-${inlineKey++}-${idx}`} />);
+      while ((match = singleAsteriskRegex.exec(section)) !== null) {
+        // Add text before the match
+        if (match.index > lastIndex) {
+          const beforeText = section.slice(lastIndex, match.index);
+          if (beforeText) {
+            // Preserve newlines in the text
+            const lines = beforeText.split('\n');
+            lines.forEach((line, lineIdx) => {
+              if (line) parts.push(line);
+              if (lineIdx < lines.length - 1) {
+                parts.push(<br key={`br-${sectionIndex}-${keyCounter++}`} />);
+              }
+            });
+          }
+        }
+
+        // Add the bold text (content between single asterisks)
+        parts.push(
+          <strong key={`strong-${sectionIndex}-${keyCounter++}`}>
+            {match[1]}
+          </strong>
+        );
+
+        lastIndex = match.index + match[0].length;
+      }
+
+      // Add remaining text after last match
+      if (lastIndex < section.length) {
+        const afterText = section.slice(lastIndex);
+        if (afterText) {
+          // Preserve newlines
+          const lines = afterText.split('\n');
+          lines.forEach((line, lineIdx) => {
+            if (line) parts.push(line);
+            if (lineIdx < lines.length - 1) {
+              parts.push(<br key={`br-${sectionIndex}-${keyCounter++}`} />);
+            }
+          });
+        }
+      }
+
+      // If no matches, add the whole section as-is (with preserved newlines)
+      if (parts.length === 0) {
+        const lines = section.split('\n');
+        lines.forEach((line, lineIdx) => {
+          if (line) parts.push(line);
+          if (lineIdx < lines.length - 1) {
+            parts.push(<br key={`br-${sectionIndex}-${keyCounter++}`} />);
+          }
         });
-      };
-
-      while ((match = regex.exec(part)) !== null) {
-        const matchIndex = match.index;
-        if (matchIndex > lastIndex) {
-          pushText(part.slice(lastIndex, matchIndex));
-        }
-
-        if (match[1] !== undefined) {
-          // double asterisks -> bold
-          inlineNodes.push(
-            <strong key={`b-${partIndex}-${inlineKey++}`}>{match[1]}</strong>
-          );
-        } else if (match[2] !== undefined) {
-          // single asterisk -> semibold
-          inlineNodes.push(
-            <span key={`sb-${partIndex}-${inlineKey++}`} className="font-semibold">
-              {match[2]}
-            </span>
-          );
-        }
-
-        lastIndex = regex.lastIndex;
       }
 
-      if (lastIndex < part.length) {
-        pushText(part.slice(lastIndex));
+      // Add this section's content
+      if (parts.length > 0) {
+        nodes.push(
+          <span key={`section-${sectionIndex}`} className="whitespace-pre-wrap">
+            {parts}
+          </span>
+        );
       }
 
-      // If nothing matched, still push the raw part (with newlines handled)
-      if (inlineNodes.length === 0) {
-        pushText(part);
-      }
-
-      // Append inline nodes to main nodes array. Wrap in span to keep group keyed.
-      nodes.push(
-        <span key={`part-${partIndex}`} className="whitespace-pre-wrap">
-          {inlineNodes}
-        </span>
-      );
-
-      // After each part except the last, insert an <hr />
-      if (partIndex < parts.length - 1) {
-        nodes.push(<hr key={`hr-${partIndex}`} className="my-6 border-gray-200" />);
+      // Add <hr/> between sections (but not after the last section)
+      if (sectionIndex < sections.length - 1) {
+        nodes.push(<hr key={`hr-${sectionIndex}`} className="my-6 border-gray-200" />);
       }
     });
 
@@ -114,8 +138,7 @@ export function GeneratedScript({
             {/**
              * Rendering rules:
              * - Triple asterisks (***) anywhere produce an <hr />
-             * - Double asterisks (**word**) produce bold text
-             * - Single asterisk (*word*) produce semibold text
+             * - Single asterisk (*word*) produce <strong>bold</strong> text
              * - Preserve newlines as <br />
              */}
             {renderScriptWithFormatting(script)}

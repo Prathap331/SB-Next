@@ -16,6 +16,104 @@ import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import { ApiService, GenerationParams, GeneratedScriptData } from '@/services/api';
 
+// Format script text: *** becomes <hr/>, *word* becomes <strong>word</strong>
+function formatScript(text: string): React.ReactNode[] {
+  if (!text) return [];
+  
+  const nodes: React.ReactNode[] = [];
+  
+  // First, split by triple asterisks (***) to create sections separated by <hr/>
+  const sections = text.split(/\*\*\*/);
+  
+  sections.forEach((section, sectionIndex) => {
+    if (!section) {
+      // Empty section, just add an hr (will happen between consecutive ***)
+      if (sectionIndex < sections.length - 1) {
+        nodes.push(<hr key={`hr-${sectionIndex}`} className="my-4 border-gray-300" />);
+      }
+      return;
+    }
+    
+    // Process each section for single asterisk patterns (*word* -> <strong>word</strong>)
+    const parts: React.ReactNode[] = [];
+    let lastIndex = 0;
+    let keyCounter = 0;
+    
+    // Match *word* pattern (but not *** since we already split on that)
+    // Pattern: * followed by one or more non-asterisk characters, followed by *
+    const singleAsteriskRegex = /\*([^*\n]+?)\*/g;
+    let match: RegExpExecArray | null;
+    
+    while ((match = singleAsteriskRegex.exec(section)) !== null) {
+      // Add text before the match
+      if (match.index > lastIndex) {
+        const beforeText = section.slice(lastIndex, match.index);
+        if (beforeText) {
+          // Preserve newlines in the text
+          const lines = beforeText.split('\n');
+          lines.forEach((line, lineIdx) => {
+            if (line) parts.push(line);
+            if (lineIdx < lines.length - 1) {
+              parts.push(<br key={`br-${sectionIndex}-${keyCounter++}`} />);
+            }
+          });
+        }
+      }
+      
+      // Add the bold text (content between single asterisks)
+      parts.push(
+        <strong key={`strong-${sectionIndex}-${keyCounter++}`}>
+          {match[1]}
+        </strong>
+      );
+      
+      lastIndex = match.index + match[0].length;
+    }
+    
+    // Add remaining text after last match
+    if (lastIndex < section.length) {
+      const afterText = section.slice(lastIndex);
+      if (afterText) {
+        // Preserve newlines
+        const lines = afterText.split('\n');
+        lines.forEach((line, lineIdx) => {
+          if (line) parts.push(line);
+          if (lineIdx < lines.length - 1) {
+            parts.push(<br key={`br-${sectionIndex}-${keyCounter++}`} />);
+          }
+        });
+      }
+    }
+    
+    // If no matches, add the whole section as-is (with preserved newlines)
+    if (parts.length === 0) {
+      const lines = section.split('\n');
+      lines.forEach((line, lineIdx) => {
+        if (line) parts.push(line);
+        if (lineIdx < lines.length - 1) {
+          parts.push(<br key={`br-${sectionIndex}-${keyCounter++}`} />);
+        }
+      });
+    }
+    
+    // Add this section's content
+    if (parts.length > 0) {
+      nodes.push(
+        <span key={`section-${sectionIndex}`} className="whitespace-pre-wrap">
+          {parts}
+        </span>
+      );
+    }
+    
+    // Add <hr/> between sections (but not after the last section)
+    if (sectionIndex < sections.length - 1) {
+      nodes.push(<hr key={`hr-${sectionIndex}`} className="my-4 border-gray-300" />);
+    }
+  });
+  
+  return nodes;
+}
+
 export default function ScriptPage() {
   const router = useRouter();
   const [data, setData] = useState<GeneratedScriptData | null>(null);
@@ -320,8 +418,8 @@ export default function ScriptPage() {
               <CardContent className="pt-0 flex-1">
                 <ScrollArea className="h-[640px]">
                   <div className="prose prose-sm max-w-none">
-                    <div className="text-gray-700 leading-relaxed whitespace-pre-line text-base">
-                      {data.synopsis || data.script || 'No synopsis available.'}
+                    <div className="text-gray-700 leading-relaxed text-base">
+                      {formatScript(data.synopsis || data.script || 'No synopsis available.')}
                     </div>
                   </div>
                 </ScrollArea>
