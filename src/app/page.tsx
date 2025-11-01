@@ -80,7 +80,7 @@ export default function Home() {
       
       {/* Hero Section - White Background */}
       <section className="bg-white flex items-center justify-center">
-        <div className="max-w-7xl mx-auto text-center bg-[#E9EBF0]/20 py-12 px-12 pb-10 rounded-lg">
+        <div className="max-w-7xl mx-auto text-center bg-[#E9EBF0]/20 py-10 px-14 pb-10 rounded-lg">
           <h1 style={{ fontFamily: 'Noto Sans, sans-serif' }} className="text-3xl md:text-4xl font-normal text-black mb-6 leading-tight font-sans">
             Write Script for your YouTube Video in{' '}
             <span className="bg-black text-white px-2 py-1 rounded text-3xl md:text-4xl font-semibold">
@@ -141,7 +141,7 @@ export default function Home() {
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   onKeyPress={(e) => e.key === 'Enter' && handleSearch(searchQuery)}
-                  className="pl-14 pr-32 py-7 text-sm md:text-lg rounded-lg border-0 bg-gray-200 text-black placeholder-gray-500 focus:bg-white focus:ring-2 focus:ring-gray-400 hover:bg-gray-100 transition-all duration-300 ease-in-out font-sans w-full"
+                  className="pl-14 pr-32 py-7 text-sm md:text-lg rounded-lg border-0 bg-white text-black placeholder-gray-500 focus:bg-white focus:ring-2 focus:ring-gray-400 hover:bg-gray-100 transition-all duration-300 ease-in-out font-sans w-full"
                 />
                 <Button
                   onClick={() => handleSearch(searchQuery)}
@@ -196,7 +196,7 @@ export default function Home() {
                 </div>
                 <div className="md:w-1/2 w-full text-center md:text-left">
                   <p className="mb-4">
-                    Unlike LLMs&apos; single-response model, our system runs multi-step reasoning workflows automatically
+                    Unlike LLMs&#39; single-response model, our system runs multi-step reasoning workflows automatically
                   </p>
                   <Button variant="secondary">Read More</Button>
                 </div>
@@ -212,7 +212,7 @@ export default function Home() {
                 </div>
                 <div className="md:w-1/2 w-full text-center md:text-left">
                   <p className="mb-4">
-                    Unlike LLMs&apos; single-response model, our system runs multi-step reasoning workflows automatically
+                    Unlike LLMs&#39; single-response model, our system runs multi-step reasoning workflows automatically
                   </p>
                   <Button variant="secondary">Read More</Button>
                 </div>
@@ -228,7 +228,7 @@ export default function Home() {
                 </div>
                 <div className="md:w-1/2 w-full text-center md:text-left">
                   <p className="mb-4">
-                    Unlike LLMs&apos; single-response model, our system runs multi-step reasoning workflows automatically
+                    Unlike LLMs&#39; single-response model, our system runs multi-step reasoning workflows automatically
                   </p>
                   <Button variant="secondary">Read More</Button>
                 </div>
@@ -244,7 +244,7 @@ export default function Home() {
                 </div>
                 <div className="md:w-1/2 w-full text-center md:text-left">
                   <p className="mb-4">
-                    Unlike LLMs&apos; single-response model, our system runs multi-step reasoning workflows automatically
+                    Unlike LLMs&#39; single-response model, our system runs multi-step reasoning workflows automatically
                   </p>
                   <Button variant="secondary">Read More</Button>
                 </div>
@@ -255,7 +255,7 @@ export default function Home() {
       </section>
 
       {/* Features Section */}
-      <section className="py-12  bg-white border border-gray-600 mx-20 mb-12">
+      <section className="py-12  bg-white border border-gray-600 mx-16 mb-12">
         <div className="container mx-auto px-16">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8 text-center">
             <div className="flex flex-col items-center">

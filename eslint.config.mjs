@@ -7,10 +7,10 @@ const __dirname = dirname(__filename);
 
 const compat = new FlatCompat({
   baseDirectory: __dirname,
+  resolvePluginsRelativeTo: __dirname,
 });
 
-const eslintConfig = [
-  ...compat.extends("next/core-web-vitals", "next/typescript"),
+export default [
   {
     ignores: [
       "node_modules/**",
@@ -18,9 +18,8 @@ const eslintConfig = [
       "out/**",
       "build/**",
       "next-env.d.ts",
-      "old-vite-website/**",  // Ignore the old Vite project
+      "old-vite-website/**",
     ],
   },
+  ...compat.extends("next/core-web-vitals", "next/typescript"),
 ];
-
-export default eslintConfig;

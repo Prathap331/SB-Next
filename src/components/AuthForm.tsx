@@ -87,7 +87,7 @@ export default function AuthForm() {
 
   // ✅ CSS utility strings
   const inputStyles =
-    'block w-full pl-10 pr-4 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-black focus:border-black sm:text-sm';
+    'block w-full pl-10 pr-4 py-2 border border-gray-300 bg-[#E9EBF0]/20 rounded-md shadow-sm focus:ring-black focus:border-black sm:text-sm';
   const buttonStyles =
     'w-full flex justify-center py-3 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-black hover:bg-gray-800 disabled:opacity-50';
   const googleButtonStyles =

@@ -134,8 +134,8 @@ export default function SearchTopicPage() {
       // Use sessionStorage so it's short-lived and per-tab
       try {
         sessionStorage.setItem('generate_params', JSON.stringify(payload));
-      } catch (e) {
-        console.warn('Failed to persist generate params to sessionStorage', e);
+      } catch {
+        console.warn('Failed to persist generate params to sessionStorage');
       }
 
       // Close modal and navigate to the script page which will perform the API call and show loader
