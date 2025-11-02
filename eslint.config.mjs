@@ -37,6 +37,8 @@ export default [
         setTimeout: "readonly",
         clearTimeout: "readonly",
         URLSearchParams: "readonly",
+        URL: "readonly",
+        Blob: "readonly",
         HTMLInputElement: "readonly",
         HTMLDivElement: "readonly",
         HTMLButtonElement: "readonly",
