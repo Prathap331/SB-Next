@@ -19,7 +19,8 @@ import {
   Calendar,
   DollarSign,
   Download,
-  ExternalLink
+  ExternalLink,
+  LogOut
 } from 'lucide-react';
 
 export default function Profile() {
@@ -60,6 +61,13 @@ export default function Profile() {
 
   const handleUpgrade = () => {
     router.push('/pricing');
+  };
+
+  const handleLogout = () => {
+    // Clear authentication token
+    localStorage.removeItem('sb-xncfghdikiqknuruurfh-auth-token');
+    // Redirect to auth page
+    router.push('/auth');
   };
 
   const downloadInvoice = (invoiceId: string) => {
@@ -174,6 +182,20 @@ export default function Profile() {
                     );
                   })}
                 </nav>
+              </CardContent>
+            </Card>
+            
+            {/* Logout Button */}
+            <Card className="shadow-lg">
+              <CardContent className="p-4">
+                <Button
+                  onClick={handleLogout}
+                  variant="outline"
+                  className="w-full flex items-center justify-center space-x-2 text-gray-600 hover:text-gray-700 hover:bg-gray-50 border-gray-200"
+                >
+                  <LogOut className="w-5 h-5" />
+                  <span className="font-medium">Logout</span>
+                </Button>
               </CardContent>
             </Card>
           </div>

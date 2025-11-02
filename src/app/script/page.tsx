@@ -182,36 +182,26 @@ function saveScriptToStorage(topic: string | undefined, ideaTitle: string | unde
   }
 }
 
-// Load script from localStorage
+// Load script from localStorage - only returns exact matches, no fallback to latest
 function loadScriptFromStorage(topic?: string, ideaTitle?: string): CachedScriptData | null {
   try {
-    // Try specific key first
+    // Try specific key only - no fallback to latest script to avoid loading wrong topic
     const specificKey = getStorageKey(topic, ideaTitle);
     const specificData = localStorage.getItem(specificKey);
     if (specificData) {
       const cached = JSON.parse(specificData) as CachedScriptData;
       const now = Date.now();
       if (cached.timestamp && now - cached.timestamp < CACHE_DURATION) {
-        return cached;
+        // Double-check that cached params match what we're looking for
+        if (cached.params.topic === topic && cached.params.ideaTitle === ideaTitle) {
+          return cached;
+        } else {
+          // Mismatch - remove invalid cache
+          localStorage.removeItem(specificKey);
+        }
       } else {
         // Cache expired, remove it
         localStorage.removeItem(specificKey);
-      }
-    }
-    
-    // Fallback: try latest script if no specific match
-    const latestKey = localStorage.getItem('script_latest_key');
-    if (latestKey && latestKey !== specificKey) {
-      const latestData = localStorage.getItem(latestKey);
-      if (latestData) {
-        const cached = JSON.parse(latestData) as CachedScriptData;
-        const now = Date.now();
-        if (cached.timestamp && now - cached.timestamp < CACHE_DURATION) {
-          return cached;
-        } else {
-          localStorage.removeItem(latestKey);
-          localStorage.removeItem('script_latest_key');
-        }
       }
     }
     
@@ -266,50 +256,49 @@ export default function ScriptPage() {
       let paramsJson: string | null = null;
       let params: GenerationParams | null = null;
       
-      // First, try to load from localStorage (for page reloads)
+      // Check if we have fresh params from "Generate Script" button (in sessionStorage)
       try {
-        // Try to get params from sessionStorage first to identify which script to load
         paramsJson = sessionStorage.getItem('generate_params');
         if (paramsJson) {
           try {
             params = JSON.parse(paramsJson);
           } catch {
-            // Invalid params, continue to check localStorage with topic from URL
+            // Invalid params, will handle below
           }
         }
-        
-        // If we have params, try loading from localStorage first
-        if (params) {
-          const cached = loadScriptFromStorage(params.topic, params.ideaTitle);
-          if (cached) {
-            setData(cached.data);
-            if (cached.pageTitle) {
-              setPageTitle(cached.pageTitle);
+      } catch (e) {
+        console.warn('Error reading sessionStorage:', e);
+      }
+
+      // If we have fresh params from "Generate Script" button, ALWAYS generate new script
+      // Don't load from cache - this is a new generation request
+      if (paramsJson && params) {
+        // Skip cache check - generate new script
+        // Continue to generation logic below
+      } else {
+        // No fresh params - this is a page reload, try loading from localStorage
+        try {
+          // Check URL params for topic-based loading
+          const search = window.location.search;
+          const urlParams = new URLSearchParams(search);
+          if (urlParams.has('topic')) {
+            const topic = urlParams.get('topic') || undefined;
+            const cached = loadScriptFromStorage(topic, undefined);
+            if (cached) {
+              // Verify the cached script matches the topic
+              if (cached.params.topic === topic) {
+                setData(cached.data);
+                if (cached.pageTitle) {
+                  setPageTitle(cached.pageTitle);
+                }
+                setIsLoading(false);
+                return; // Successfully loaded from cache
+              }
             }
-            setIsLoading(false);
-            return; // Successfully loaded from cache
           }
-        }
-        
-        // Also check URL params for topic-based loading
-        const search = window.location.search;
-        const urlParams = new URLSearchParams(search);
-        if (urlParams.has('topic')) {
-          const topic = urlParams.get('topic') || undefined;
-          const cached = loadScriptFromStorage(topic, undefined);
-          if (cached) {
-            setData(cached.data);
-            if (cached.pageTitle) {
-              setPageTitle(cached.pageTitle);
-            }
-            setIsLoading(false);
-            return; // Successfully loaded from cache
-          }
-        }
-        
-        // If no params found but sessionStorage was also empty, try loading latest script
-        // This handles the case where user reloads the page after sessionStorage was cleared
-        if (!paramsJson) {
+          
+          // As last resort, try loading latest script only if sessionStorage is empty
+          // This handles the case where user reloads the page after sessionStorage was cleared
           const latestKey = localStorage.getItem('script_latest_key');
           if (latestKey) {
             const latestData = localStorage.getItem(latestKey);
@@ -326,12 +315,12 @@ export default function ScriptPage() {
               }
             }
           }
+        } catch (e) {
+          console.warn('Error checking localStorage:', e);
         }
-      } catch (e) {
-        console.warn('Error checking localStorage:', e);
       }
 
-      // If not found in localStorage, try sessionStorage or URL params for new generation
+      // If not found in localStorage or we have fresh params, generate new script
       if (!paramsJson) {
         // Also try reading from URL query (for older flows like /script/:id?duration=...)
         const search = window.location.search;
@@ -540,24 +529,24 @@ export default function ScriptPage() {
         </Card>
 
         {/* Main two-column layout */}
-        <div className="grid grid-cols-1 lg:grid-cols-4 gap-4 sm:gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-4 gap-4 sm:gap-6 items-start">
           {/* Left Column - Sidebar */}
           <div className="lg:col-span-1 flex flex-col gap-4 sm:gap-6 order-2 lg:order-1">
             {/* Structure - Always visible */}
-            <Card className="shadow-lg flex flex-col flex-1 min-h-[250px] lg:min-h-0">
-              <CardHeader className="p-4 sm:p-6 pb-3 flex-shrink-0">
+            <Card className="shadow-lg">
+              <CardHeader className="p-4 sm:p-6 pb-3">
                 <CardTitle className="text-base sm:text-lg">Script Structure Flow</CardTitle>
                 <CardDescription className="text-xs sm:text-sm">Visual representation of your script&apos;s flow and structure</CardDescription>
               </CardHeader>
-              <CardContent className="p-4 sm:p-6 pt-0 flex-1 min-h-0 overflow-hidden flex flex-col">
+              <CardContent className="p-4 sm:p-6 pt-0">
                 {data.structure && data.structure.length > 0 ? (
-                  <div className="space-y-2 sm:space-y-3 flex-1 overflow-y-auto pr-2">
+                  <div className="space-y-2 sm:space-y-3">
                     {data.structure.map((section, index) => (
                       <div key={section.id ?? index} className="flex items-start">
                         <div className="flex flex-col items-center mr-2 sm:mr-3 flex-shrink-0">
                           <div className="w-6 h-6 sm:w-8 sm:h-8 rounded-full bg-gray-600 text-white flex items-center justify-center text-xs sm:text-sm font-medium">{index + 1}</div>
                           {index < data.structure!.length - 1 && (
-                            <div className="w-px bg-gray-200 mt-1 flex-1 min-h-[1rem]" />
+                            <div className="w-px bg-gray-200 mt-1 min-h-[1rem]" />
                           )}
                         </div>
                         <div className="flex-1 bg-white/50 rounded-lg p-2 sm:p-3 border border-gray-200 min-w-0">
@@ -568,7 +557,7 @@ export default function ScriptPage() {
                     ))}
                   </div>
                 ) : (
-                  <div className="flex-1 flex items-center justify-center text-center p-6">
+                  <div className="flex items-center justify-center text-center py-8">
                     <div className="text-gray-400 text-sm">
                       <History className="w-8 h-8 mx-auto mb-2 opacity-50" />
                       <p>No structure data available</p>
@@ -579,17 +568,17 @@ export default function ScriptPage() {
             </Card>
 
             {/* Sources - Always visible */}
-            <Card className="shadow-lg flex flex-col flex-1 min-h-[250px] lg:min-h-0">
-              <CardHeader className="p-4 sm:p-6 pb-3 flex-shrink-0">
+            <Card className="shadow-lg">
+              <CardHeader className="p-4 sm:p-6 pb-3">
                 <CardTitle className="flex items-center text-base sm:text-lg">
                   <LinkIcon className="w-4 h-4 sm:w-5 sm:h-5 mr-2" />
                   Research Sources
                 </CardTitle>
                 <CardDescription className="text-xs sm:text-sm">Credible sources and references used in this script</CardDescription>
               </CardHeader>
-              <CardContent className="p-4 sm:p-6 pt-0 flex-1 min-h-0 overflow-hidden flex flex-col">
+              <CardContent className="p-4 sm:p-6 pt-0">
                 {data.source_urls && data.source_urls.length > 0 ? (
-                  <div className="space-y-2 sm:space-y-3 flex-1 overflow-y-auto pr-2">
+                  <div className="space-y-2 sm:space-y-3">
                     {data.source_urls.map((url, index) => (
                       <div key={index} className="flex items-start space-x-2 sm:space-x-3 p-2 sm:p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
                         <ExternalLink className="w-4 h-4 sm:w-5 sm:h-5 text-black mt-0.5 sm:mt-1 flex-shrink-0" />
@@ -602,7 +591,7 @@ export default function ScriptPage() {
                     ))}
                   </div>
                 ) : (
-                  <div className="flex-1 flex items-center justify-center text-center p-6">
+                  <div className="flex items-center justify-center text-center py-8">
                     <div className="text-gray-400 text-sm">
                       <LinkIcon className="w-8 h-8 mx-auto mb-2 opacity-50" />
                       <p>No sources available</p>
@@ -650,11 +639,9 @@ export default function ScriptPage() {
                 </div>
               </CardHeader>
               <CardContent className="p-4 sm:p-6 pt-0">
-                <div className="min-h-[600px] sm:min-h-[700px] md:min-h-[800px] lg:min-h-[900px] max-h-[90vh] overflow-y-auto pr-2">5
-                  <div className="prose prose-sm max-w-none">
-                    <div className="text-gray-700 leading-relaxed text-sm sm:text-base">
-                      {formatScript(data.synopsis || data.script || 'No synopsis available.')}
-                    </div>
+                <div className="prose prose-sm max-w-none">
+                  <div className="text-gray-700 leading-relaxed text-sm sm:text-base">
+                    {formatScript(data.synopsis || data.script || 'No synopsis available.')}
                   </div>
                 </div>
               </CardContent>
