@@ -547,7 +547,7 @@ export default function ScriptPage() {
             <Card className="shadow-lg flex flex-col flex-1 min-h-[250px] lg:min-h-0">
               <CardHeader className="p-4 sm:p-6 pb-3 flex-shrink-0">
                 <CardTitle className="text-base sm:text-lg">Script Structure Flow</CardTitle>
-                <CardDescription className="text-xs sm:text-sm">Visual representation of your script's flow and structure</CardDescription>
+                <CardDescription className="text-xs sm:text-sm">Visual representation of your script&apos;s flow and structure</CardDescription>
               </CardHeader>
               <CardContent className="p-4 sm:p-6 pt-0 flex-1 min-h-0 overflow-hidden flex flex-col">
                 {data.structure && data.structure.length > 0 ? (
