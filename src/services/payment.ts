@@ -58,9 +58,9 @@ function getAuthToken(): string | null {
 // Check if server is ready (returns 200)
 // This is needed for Render.com services that spin down after inactivity
 export async function checkServerHealth(
-  maxRetries: number = 10,
-  retryDelay: number = 2000,
-  timeout: number = 30000
+  maxRetries: number = 3,
+  retryDelay: number = 0,
+  timeout: number = 300000
 ): Promise<void> {
   const startTime = Date.now();
   
@@ -83,15 +83,15 @@ export async function checkServerHealth(
         return;
       }
 
-      // If not 200, wait and retry
-      if (attempt < maxRetries) {
+      // If not 200, wait and retry (only if retryDelay > 0)
+      if (attempt < maxRetries && retryDelay > 0) {
         await new Promise(resolve => setTimeout(resolve, retryDelay));
       }
     } catch {
       // Network error or server not responding
-      if (attempt < maxRetries) {
+      if (attempt < maxRetries && retryDelay > 0) {
         await new Promise(resolve => setTimeout(resolve, retryDelay));
-      } else {
+      } else if (attempt >= maxRetries) {
         throw new Error('Server is not responding. Please try again in a moment.');
       }
     }
