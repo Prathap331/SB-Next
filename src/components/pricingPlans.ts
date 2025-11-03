@@ -52,7 +52,7 @@ export const pricingPlans: PricingPlan[] = [
     buttonVariant: 'default' as const,
     popular: true,
     icon: Zap,
-    amount: 1250, // ~$15 in INR (assuming ~83 INR per USD)
+    amount: 100, // ~$15 in INR (assuming ~83 INR per USD)
     targetTier: 'basic'
   },
   {
@@ -76,7 +76,7 @@ export const pricingPlans: PricingPlan[] = [
     buttonVariant: 'default' as const,
     popular: false,
     icon: Crown,
-    amount: 2075, // ~$25 in INR (assuming ~83 INR per USD)
+    amount: 100, // ~$25 in INR (assuming ~83 INR per USD)
     targetTier: 'pro'
   }
 ];

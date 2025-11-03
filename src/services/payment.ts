@@ -55,6 +55,52 @@ function getAuthToken(): string | null {
   return null;
 }
 
+// Check if server is ready (returns 200)
+// This is needed for Render.com services that spin down after inactivity
+export async function checkServerHealth(
+  maxRetries: number = 10,
+  retryDelay: number = 2000,
+  timeout: number = 30000
+): Promise<void> {
+  const startTime = Date.now();
+  
+  for (let attempt = 1; attempt <= maxRetries; attempt++) {
+    // Check timeout
+    if (Date.now() - startTime > timeout) {
+      throw new Error('Server health check timed out. Please try again in a moment.');
+    }
+
+    try {
+      const response = await fetch('https://sb-u864.onrender.com/', {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (response.status === 200) {
+        // Server is ready
+        return;
+      }
+
+      // If not 200, wait and retry
+      if (attempt < maxRetries) {
+        await new Promise(resolve => setTimeout(resolve, retryDelay));
+      }
+    } catch {
+      // Network error or server not responding
+      if (attempt < maxRetries) {
+        await new Promise(resolve => setTimeout(resolve, retryDelay));
+      } else {
+        throw new Error('Server is not responding. Please try again in a moment.');
+      }
+    }
+  }
+
+  // If we've exhausted all retries without getting 200
+  throw new Error('Server is taking longer than expected to start. Please try again in a moment.');
+}
+
 // Create order on backend
 // Note: Backend expects amount in rupees (e.g., 500 for ₹500)
 // Backend will convert to paise internally and return the paise amount in response
@@ -98,7 +144,7 @@ export async function initiatePayment(
 ): Promise<void> {
   try {
     await loadRazorpayScript();
-  } catch (error) {
+  } catch {
     onFailure('Failed to load Razorpay. Please refresh and try again.');
     return;
   }
@@ -145,6 +191,9 @@ export async function processPayment(
   onFailure: (error: string) => void
 ): Promise<void> {
   try {
+    // Step 0: Check if server is ready (waits for status 200)
+    await checkServerHealth();
+    
     // Step 1: Create order on backend
     // Backend will convert rupees to paise and return order details
     const orderData = await createOrder(amount, targetTier);
