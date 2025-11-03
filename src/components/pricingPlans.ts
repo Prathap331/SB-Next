@@ -3,7 +3,12 @@
 import { PlanProps } from './PricingCard';
 import { Crown, Zap, Target } from 'lucide-react';
 
-export const pricingPlans: PlanProps[] = [
+export interface PricingPlan extends PlanProps {
+  amount: number; // Amount in INR
+  targetTier: string; // Tier identifier for API
+}
+
+export const pricingPlans: PricingPlan[] = [
   {
     name: 'Free',
     price: '$0',
@@ -24,7 +29,9 @@ export const pricingPlans: PlanProps[] = [
     buttonText: 'Get Started',
     buttonVariant: 'outline' as const,
     popular: false,
-    icon: Target
+    icon: Target,
+    amount: 0,
+    targetTier: 'free'
   },
   {
     name: 'Basic',
@@ -44,7 +51,9 @@ export const pricingPlans: PlanProps[] = [
     buttonText: 'Choose Basic',
     buttonVariant: 'default' as const,
     popular: true,
-    icon: Zap
+    icon: Zap,
+    amount: 1250, // ~$15 in INR (assuming ~83 INR per USD)
+    targetTier: 'basic'
   },
   {
     name: 'Pro',
@@ -66,6 +75,8 @@ export const pricingPlans: PlanProps[] = [
     buttonText: 'Choose Pro',
     buttonVariant: 'default' as const,
     popular: false,
-    icon: Crown
+    icon: Crown,
+    amount: 2075, // ~$25 in INR (assuming ~83 INR per USD)
+    targetTier: 'pro'
   }
 ];

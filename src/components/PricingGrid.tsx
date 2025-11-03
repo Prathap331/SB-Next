@@ -7,7 +7,7 @@ export default function PricingGrid() {
   return (
     <div className="grid md:grid-cols-3 gap-8 max-w-6xl mx-auto">
       {pricingPlans.map((plan, index) => (
-        <PricingCard key={index} plan={plan} />
+        <PricingCard key={plan.name} plan={plan} />
       ))}
     </div>
   );
