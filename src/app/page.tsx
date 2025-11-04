@@ -80,14 +80,14 @@ export default function Home() {
       
       {/* Hero Section - White Background */}
       <section className="bg-white flex items-center justify-center">
-        <div className="max-w-7xl mx-auto text-center bg-[#E9EBF0]/20 py-10 px-36 pb-10 rounded-lg">
-          <h1 style={{ fontFamily: 'Noto Sans, sans-serif' }} className="text-3xl md:text-4xl font-normal text-black mb-6 leading-tight font-sans">
-            Write Script for your YouTube Video in{' '}
-            <span className="bg-black text-white px-2 py-1 rounded text-3xl md:text-4xl font-semibold">
+        <div className="max-w-7xl mx-auto text-center bg-[#0c0d10] py-10 px-36 pb-10 rounded-lg">
+          <h1 style={{ fontFamily: 'Noto Sans, sans-serif' }} className="text-3xl md:text-4xl font-semibold text-white mb-6 leading-tight font-sans">
+            Write Script for your YouTube Video in{' '}3 Minutes
+            {/* <span className="bg-black text-white px-2 py-1 rounded text-3xl md:text-4xl font-semibold">
               3 Minutes
-            </span>
+            </span> */}
           </h1>
-          <p style={{ fontFamily: 'Noto Sans, sans-serif' }} className="text-sm md:text-lg text-black-800 mb-0 leading-relaxed max-w-5xl mx-auto font-normal">
+          <p style={{ fontFamily: 'Noto Sans, sans-serif' }} className="text-sm md:text-lg text-white mb-0 leading-relaxed max-w-5xl mx-auto font-normal">
           AI that transforms your ideas into engaging, factual, research-backed YouTube scripts.
           </p>
         </div>
@@ -131,7 +131,7 @@ export default function Home() {
             </div> */}
 
             {/* Search Section */}
-            <div className="max-w-4xl mx-auto mb-10 shadow-lg border border-gray-400 rounded-lg">
+            <div className="max-w-4xl mx-auto mb-10 shadow-lg border border-gray-400 rounded-lg mt-4">
               <div className="relative flex items-center">
                 <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 w-6 h-6 z-10" />
                 <Input
