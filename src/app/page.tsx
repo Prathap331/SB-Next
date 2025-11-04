@@ -80,7 +80,7 @@ export default function Home() {
       
       {/* Hero Section - White Background */}
       <section className="bg-white flex items-center justify-center">
-        <div className="max-w-7xl mx-auto text-center bg-[#E9EBF0]/20 py-10 px-14 pb-10 rounded-lg">
+        <div className="max-w-7xl mx-auto text-center bg-[#E5E4E280] py-10 px-14 pb-10 rounded-lg">
           <h1 style={{ fontFamily: 'Noto Sans, sans-serif' }} className="text-3xl md:text-4xl font-normal text-black mb-6 leading-tight font-sans">
             Write Script for your YouTube Video in{' '}
             <span className="bg-black text-white px-2 py-1 rounded text-3xl md:text-4xl font-semibold">
@@ -96,11 +96,11 @@ export default function Home() {
 
 
     {/* Main Content Section - Dark Background */}
-    <section className="bg-[#1a1a1a] pb-3">
+    <section className="pb-3">
         <div className="max-w-6xl mx-auto px-6 py-8">
 
             {/* Type Selection Toggle */}
-            <div className="flex justify-center mb-8">
+            {/* <div className="flex justify-center mb-8">
               <div className="bg-white rounded-xl py-2 px-2 shadow-sm border border-gray-200">
                 <div className="flex">
                   <Button
@@ -129,11 +129,11 @@ export default function Home() {
                   </Button>
                 </div>
               </div>
-            </div>
+            </div> */}
 
             {/* Search Section */}
-            <div className="max-w-4xl mx-auto mb-10">
-              <div className="relative">
+            <div className="max-w-4xl mx-auto mb-10 shadow-lg py-2 rounded-lg">
+              <div className="relative align-middle">
                 <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 w-6 h-6" />
                 <Input
                   type="text"
@@ -141,7 +141,7 @@ export default function Home() {
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   onKeyPress={(e) => e.key === 'Enter' && handleSearch(searchQuery)}
-                  className="pl-14 pr-32 py-7 text-sm md:text-lg rounded-lg border-0 bg-white text-black placeholder-gray-500 focus:bg-white focus:ring-2 focus:ring-gray-400 hover:bg-gray-100 transition-all duration-300 ease-in-out font-sans w-full"
+                  className="pl-14 pr-32 py-7 text-sm md:text-lg rounded-lg border-0 bg-white text-black placeholder-gray-500 focus:bg-white focus:ring-2 focus:ring-gray-400 font-sans w-full"
                 />
                 <Button
                   onClick={() => handleSearch(searchQuery)}
@@ -168,7 +168,7 @@ export default function Home() {
                       key={index}
                       variant="outline"
                       onClick={() => handleSuggestionClick(topic)}
-                      className="h-auto px-6 py-2 text-md font-medium transition-all duration-300 ease-in-out transform rounded-lg border-0 bg-white text-gray-500 hover:bg-gray-50 hover:shadow-lg hover:scale-105 hover:-translate-y-1 whitespace-nowrap font-sans group"
+                      className="h-auto px-6 py-2 text-md font-medium transition-all duration-300 ease-in-out transform rounded-lg border-0 bg-white text-gray-500 hover:bg-gray-50 hover:shadow-lg hover:scale-105 hover:-translate-y-1 whitespace-nowrap font-sans group shadow-lg"
                     >
                       <span className="transition-colors duration-300 group-hover:text-gray-800">
                         {topic}
