@@ -37,6 +37,17 @@ function loadRazorpayScript(): Promise<void> {
   });
 }
 
+// Handle unauthorized errors - remove token and redirect to auth
+function handleUnauthorized(): void {
+  if (typeof window !== 'undefined') {
+    // Clear authentication tokens from localStorage
+    localStorage.removeItem('sb-xncfghdikiqknuruurfh-auth-token');
+    
+    // Redirect to the authentication page
+    window.location.href = '/auth';
+  }
+}
+
 // Get auth token from localStorage
 function getAuthToken(): string | null {
   if (typeof window === 'undefined') {
@@ -126,6 +137,8 @@ export async function createOrder(amount: number, targetTier: string): Promise<C
   if (!response.ok) {
     const errorText = await response.text();
     if (response.status === 401) {
+      // Remove token and redirect to auth page
+      handleUnauthorized();
       throw new Error('Unauthorized. Please login again.');
     }
     throw new Error(`Failed to create order: ${errorText}`);
