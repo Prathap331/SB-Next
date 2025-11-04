@@ -11,7 +11,7 @@ export interface PricingPlan extends PlanProps {
 export const pricingPlans: PricingPlan[] = [
   {
     name: 'Free',
-    price: '$0',
+    price: '₹0',
     period: 'One-time',
     description: 'Perfect for trying out our AI scriptwriting',
     features: [
@@ -35,7 +35,7 @@ export const pricingPlans: PricingPlan[] = [
   },
   {
     name: 'Basic',
-    price: '$15',
+    price: '₹999',
     period: '/month',
     description: 'Great for regular content creators',
     features: [
@@ -57,7 +57,7 @@ export const pricingPlans: PricingPlan[] = [
   },
   {
     name: 'Pro',
-    price: '$25',
+    price: '₹1599',
     period: '/month',
     description: 'For professional content creators and teams',
     features: [
