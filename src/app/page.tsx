@@ -80,7 +80,7 @@ export default function Home() {
       
       {/* Hero Section - White Background */}
       <section className="bg-white flex items-center justify-center">
-        <div className="max-w-7xl mx-auto text-center bg-[#0c0d10] py-10 px-36 pb-10 rounded-lg">
+        <div className="max-w-7xl mx-auto text-center bg-[#0c0d10]/90 py-10 px-36 pb-10 rounded-lg">
           <h1 style={{ fontFamily: 'Noto Sans, sans-serif' }} className="text-3xl md:text-4xl font-semibold text-white mb-6 leading-tight font-sans">
             Write Script for your YouTube Video in{' '}3 Minutes
             {/* <span className="bg-black text-white px-2 py-1 rounded text-3xl md:text-4xl font-semibold">
