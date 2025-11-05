@@ -7,10 +7,10 @@ import ComingFeatures from '../components/ComingFeatures';
 import Footer from '../components/Footer';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Search, TrendingUp, Newspaper, Film, BrainCircuit, Zap, FileText, Layers } from 'lucide-react';
+import { Search, TrendingUp, BrainCircuit } from 'lucide-react';
 
 export default function Home() {
-  const [selectedType, setSelectedType] = useState('news');
+  const [selectedType] = useState('news');
   const [searchQuery, setSearchQuery] = useState('');
   const router = useRouter();
 
@@ -82,7 +82,7 @@ export default function Home() {
       <section className="bg-white flex items-center justify-center">
         <div className="max-w-7xl mx-auto text-center bg-[#0c0d10]/90 py-10 px-36 pb-10 rounded-lg">
           <h1 style={{ fontFamily: 'Noto Sans, sans-serif' }} className="text-3xl md:text-4xl font-semibold text-white mb-6 leading-tight font-sans">
-            Write Script for your YouTube Video in{' '}3 Minutes
+            Write Script for your YouTube Video in 3 Minutes
             {/* <span className="bg-black text-white px-2 py-1 rounded text-3xl md:text-4xl font-semibold">
               3 Minutes
             </span> */}

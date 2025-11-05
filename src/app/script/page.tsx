@@ -529,16 +529,15 @@ export default function ScriptPage() {
         </Card>
 
         {/* Main two-column layout */}
-        <div className="grid grid-cols-1 lg:grid-cols-4 gap-4 sm:gap-6 items-start">
+        <div className="grid grid-cols-1 lg:grid-cols-4 gap-4 sm:gap-6">
           {/* Left Column - Sidebar */}
-          <div className="lg:col-span-1 flex flex-col gap-4 sm:gap-6 order-2 lg:order-1">
-            {/* Structure - Always visible */}
-            <Card className="shadow-lg">
-              <CardHeader className="p-4 sm:p-6 pb-3">
+          <div className="lg:col-span-1 order-2 lg:order-1">
+            <Card className="shadow-lg h-[calc(100vh-2rem)] sm:h-[calc(100vh-2.5rem)] md:h-[calc(100vh-3rem)] lg:h-[calc(100vh-3.5rem)] flex flex-col">
+              <CardHeader className="p-4 sm:p-6 pb-3 flex-shrink-0">
                 <CardTitle className="text-base sm:text-lg">Script Structure Flow</CardTitle>
                 <CardDescription className="text-xs sm:text-sm">Visual representation of your script&apos;s flow and structure</CardDescription>
               </CardHeader>
-              <CardContent className="p-4 sm:p-6 pt-0">
+              <CardContent className="p-4 sm:p-6 pt-0 flex-1 overflow-y-auto min-h-0">
                 {data.structure && data.structure.length > 0 ? (
                   <div className="space-y-2 sm:space-y-3">
                     {data.structure.map((section, index) => (
@@ -566,49 +565,23 @@ export default function ScriptPage() {
                 )}
               </CardContent>
             </Card>
-
-            {/* Sources - Always visible */}
-            <Card className="shadow-lg">
-              <CardHeader className="p-4 sm:p-6 pb-3">
-                <CardTitle className="flex items-center text-base sm:text-lg">
-                  <LinkIcon className="w-4 h-4 sm:w-5 sm:h-5 mr-2" />
-                  Research Sources
-                </CardTitle>
-                <CardDescription className="text-xs sm:text-sm">Credible sources and references used in this script</CardDescription>
-              </CardHeader>
-              <CardContent className="p-4 sm:p-6 pt-0">
-                {data.source_urls && data.source_urls.length > 0 ? (
-                  <div className="space-y-2 sm:space-y-3">
-                    {data.source_urls.map((url, index) => (
-                      <div key={index} className="flex items-start space-x-2 sm:space-x-3 p-2 sm:p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
-                        <ExternalLink className="w-4 h-4 sm:w-5 sm:h-5 text-black mt-0.5 sm:mt-1 flex-shrink-0" />
-                        <div className="flex-1 min-w-0">
-                          <a href={url} target="_blank" rel="noopener noreferrer" className="text-xs sm:text-sm text-gray-800 hover:underline break-all">
-                            {url}
-                          </a>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                ) : (
-                  <div className="flex items-center justify-center text-center py-8">
-                    <div className="text-gray-400 text-sm">
-                      <LinkIcon className="w-8 h-8 mx-auto mb-2 opacity-50" />
-                      <p>No sources available</p>
-                    </div>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
           </div>
 
           {/* Right Column - Main Content */}
           <div className="lg:col-span-3 order-1 lg:order-2">
-            <Card className="shadow-lg">
-              <CardHeader className="p-4 sm:p-6 pb-3">
+            <Card className="shadow-lg h-[calc(100vh-2rem)] sm:h-[calc(100vh-2.5rem)] md:h-[calc(100vh-3rem)] lg:h-[calc(100vh-3.5rem)] flex flex-col relative">
+              {/* Fixed Sources URLs Button - Top Right Corner */}
+              <div className="absolute top-4 right-4 z-10">
+                <Button size="sm" className="bg-gradient-to-r from-gray-600 to-gray-800 text-white hover:from-gray-700 hover:to-black text-xs sm:text-sm" onClick={() => { setShowSourcesDialog(true); }}>
+                  <LinkIcon className="w-3 h-3 sm:w-4 sm:h-4 mr-1" />
+                  <span className="hidden sm:inline">Sources URLs</span>
+                  <span className="sm:hidden">Sources</span>
+                </Button>
+              </div>
+              <CardHeader className="p-4 sm:p-6 pb-3 flex-shrink-0">
                 <div className="flex flex-col space-y-3 sm:space-y-4">
                   <div>
-                    <CardTitle className="text-base sm:text-lg">Script Synopsis</CardTitle>
+                    <CardTitle className="text-base sm:text-lg pr-20 sm:pr-24">Script Synopsis</CardTitle>
                     <CardDescription className="text-xs sm:text-sm">
                       Comprehensive overview of your script content and approach
                     </CardDescription>
@@ -638,7 +611,7 @@ export default function ScriptPage() {
                   </div>
                 </div>
               </CardHeader>
-              <CardContent className="p-4 sm:p-6 pt-0">
+              <CardContent className="p-4 sm:p-6 pt-0 flex-1 overflow-y-auto min-h-0">
                 <div className="prose prose-sm max-w-none">
                   <div className="text-gray-700 leading-relaxed text-sm sm:text-base">
                     {formatScript(data.synopsis || data.script || 'No synopsis available.')}
