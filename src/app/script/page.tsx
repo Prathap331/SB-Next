@@ -5,13 +5,12 @@ import { useRouter } from 'next/navigation';
 import { 
   Loader2, FileText, Lightbulb, Heart, BookOpen, History, 
   Search, Link as LinkIcon, ExternalLink, 
-  Eye, Monitor, Download
+  Eye, Monitor, Download, X
 } from 'lucide-react';
 // Note: GeneratedScript component exists in the project but is not used in this detailed view
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import { ApiService, GenerationParams, GeneratedScriptData } from '@/services/api';
@@ -425,6 +424,27 @@ export default function ScriptPage() {
 
   const [showSourcesDialog, setShowSourcesDialog] = useState(false);
 
+  // Prevent body scroll when side panel is open
+  useEffect(() => {
+    if (showSourcesDialog) {
+      // Save current scroll position
+      const scrollY = window.scrollY;
+      document.body.style.position = 'fixed';
+      document.body.style.top = `-${scrollY}px`;
+      document.body.style.width = '100%';
+      document.body.style.overflow = 'hidden';
+      
+      return () => {
+        // Restore scroll position when closing
+        document.body.style.position = '';
+        document.body.style.top = '';
+        document.body.style.width = '';
+        document.body.style.overflow = '';
+        window.scrollTo(0, scrollY);
+      };
+    }
+  }, [showSourcesDialog]);
+
   // Don't render anything if redirecting or not yet validated
   if (!shouldRender || isRedirecting) {
     return null;
@@ -479,7 +499,15 @@ export default function ScriptPage() {
   return (
     <div className="min-h-screen bg-[#E9EBF0]/20">
       <Header />
-      <main className="container mx-auto px-4 sm:px-6 md:px-8 lg:px-12 xl:px-16 py-4 sm:py-6 md:py-8">
+      {/* Blur overlay when sources panel is open */}
+      {showSourcesDialog && (
+        <div 
+          className="fixed inset-0 bg-black/20 backdrop-blur-sm z-40 transition-opacity duration-300"
+          onClick={() => setShowSourcesDialog(false)}
+          aria-hidden="true"
+        />
+      )}
+      <main className={`container mx-auto px-4 sm:px-6 md:px-8 lg:px-12 xl:px-16 py-4 sm:py-6 md:py-8 transition-all duration-300 ${showSourcesDialog ? 'blur-sm' : ''}`}>
         {/* Header Section */}
         <div className="mb-4 sm:mb-6">
           <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-1 sm:mb-2 break-words">{data.title || pageTitle}</h1>
@@ -624,28 +652,93 @@ export default function ScriptPage() {
       </main>
       <Footer />
 
-      {/* Research Sources Dialog - kept for compatibility */}
-      <Dialog open={showSourcesDialog} onOpenChange={setShowSourcesDialog}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Research Sources</DialogTitle>
-            <DialogDescription>Sources used to generate this script.</DialogDescription>
-          </DialogHeader>
-          <ScrollArea className="max-h-[60vh]">
-            <div className="space-y-4">
-              {data.source_urls?.map((url, index) => (
-                <Card key={index}>
-                  <CardContent className="p-4">
-                    <a href={url} target="_blank" rel="noopener noreferrer" className="text-sm text-blue-500 hover:underline flex items-center gap-1">
-                      {url} <ExternalLink className="h-3 w-3" />
-                    </a>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-          </ScrollArea>
-        </DialogContent>
-      </Dialog>
+      {/* Research Sources Side Panel */}
+      <div
+        className={`fixed top-0 right-0 h-full w-full sm:w-[400px] lg:w-[500px] bg-gray-50 shadow-2xl z-50 transition-transform duration-300 ease-in-out ${
+          showSourcesDialog ? 'translate-x-0' : 'translate-x-full'
+        }`}
+      >
+        {/* Header */}
+        <div className="sticky top-0 bg-white border-b border-gray-200 px-4 sm:px-6 py-5 flex items-center justify-between z-10">
+          <h2 className="text-base sm:text-lg font-semibold text-gray-900">
+            {data.source_urls?.length || 0} sources
+          </h2>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => setShowSourcesDialog(false)}
+            className="h-8 w-8 p-0 hover:bg-gray-100 rounded-full flex-shrink-0"
+          >
+            <X className="h-4 w-4" />
+            <span className="sr-only">Close</span>
+          </Button>
+        </div>
+
+        {/* Scrollable Content */}
+        <ScrollArea className="h-[calc(100vh-65px)] sm:h-[calc(100vh-73px)]">
+          <div className="px-3 sm:px-4 md:px-6 py-3 sm:py-4 space-y-3 sm:space-y-4">
+            {data.source_urls && data.source_urls.length > 0 ? (
+              data.source_urls.map((url, index) => {
+                // Extract domain name from URL
+                let domain = '';
+                let domainInitial = '?';
+                try {
+                  if (url) {
+                    domain = new URL(url).hostname.replace('www.', '');
+                    domainInitial = domain.charAt(0).toUpperCase();
+                  }
+                } catch {
+                  // If URL parsing fails, use the URL as-is
+                  domain = url || 'Unknown source';
+                  domainInitial = domain.charAt(0).toUpperCase();
+                }
+                
+                return (
+                  <Card key={index} className="hover:shadow-md transition-shadow w-full max-w-[90%]">
+                    <CardContent className="p-3 sm:p-4">
+                      <div className="flex items-start gap-2 sm:gap-3">
+                        {/* Logo/Icon */}
+                        <div className="flex-shrink-0 w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-gray-200 flex items-center justify-center text-gray-600 font-semibold text-xs sm:text-sm">
+                          {domainInitial}
+                        </div>
+                        
+                        {/* Source Info */}
+                        <div className="flex-1 min-w-0 overflow-hidden">
+                          <div className="text-[10px] sm:text-xs font-medium text-gray-600 mb-1 truncate">
+                            {domain}
+                          </div>
+                          <a 
+                            href={url} 
+                            target="_blank" 
+                            rel="noopener noreferrer"
+                            className="block group"
+                          >
+                            <h3 className="text-xs sm:text-sm font-semibold text-gray-900 mb-1.5 sm:mb-2 line-clamp-2 group-hover:text-blue-600 transition-colors break-words">
+                              {url}
+                            </h3>
+                            <p className="text-[10px] sm:text-xs text-gray-500 line-clamp-2 sm:line-clamp-3 leading-relaxed">
+                              Source reference for research and factual information used in this script.
+                            </p>
+                            <div className="flex items-center gap-1 mt-1.5 sm:mt-2 text-[10px] sm:text-xs text-blue-600 opacity-0 group-hover:opacity-100 transition-opacity">
+                              <span className="whitespace-nowrap">Visit source</span>
+                              <ExternalLink className="h-2.5 w-2.5 sm:h-3 sm:w-3 flex-shrink-0" />
+                            </div>
+                          </a>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                );
+              })
+            ) : (
+              <div className="flex flex-col items-center justify-center py-12 text-center">
+                <LinkIcon className="w-12 h-12 text-gray-300 mb-4" />
+                <p className="text-gray-500 text-sm">No sources available</p>
+              </div>
+            )}
+          </div>
+        </ScrollArea>
+      </div>
     </div>
   );
 }
