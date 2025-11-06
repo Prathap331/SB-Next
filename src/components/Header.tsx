@@ -19,7 +19,7 @@ const Header = () => {
 
   return (
     <header className="bg-white backdrop-blur-md sticky top-0 z-50">
-      <div className="container mx-auto lg:px-16 py-3">
+      <div className="container mx-auto px-4 sm:px-6 md:px-8 lg:px-16 py-3">
         <div className="flex items-center justify-between">
           {/* Logo */}
           <Link href="/" className="flex items-center space-x-2 hover:opacity-80 transition-opacity">
@@ -70,7 +70,7 @@ const Header = () => {
       {/* Mobile Menu */}
       {isMenuOpen && (
         <div className="md:hidden bg-white/80 backdrop-blur-md">
-          <div className="container mx-auto lg:px-16 py-4 flex flex-col space-y-4">
+          <div className="container mx-auto px-4 sm:px-6 md:px-8 lg:px-16 py-4 flex flex-col space-y-4">
             <Link href="/pricing" onClick={() => setIsMenuOpen(false)}>
               <Button variant="ghost" className="w-full justify-start flex items-center">
                 <Crown className="w-4 h-4 mr-2 text-yellow-500" />

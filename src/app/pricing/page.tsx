@@ -12,9 +12,10 @@ export default function Pricing() {
       
       <div className="container mx-auto px-4 py-16">
         {/* Header Section */}
-        <div className="text-center max-w-4xl mx-auto mb-16">
+        <div className="text-left sm:text-center max-w-4xl mx-auto mb-16">
           <h1 className="text-3xl md:text-4xl font-bold text-gray-900 mb-6 leading-tight">
             Choose Your{' '}
+            <br className="sm:hidden" />
             <span className="bg-black text-white px-2 py-1 rounded text-3xl md:text-4xl font-semibold">
               Perfect Plan
             </span>

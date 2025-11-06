@@ -79,15 +79,15 @@ export default function Home() {
       <Header />
       
       {/* Hero Section - White Background */}
-      <section className="bg-white flex items-center justify-center">
-        <div className="max-w-7xl mx-auto text-center bg-[#0c0d10]/90 py-10 px-36 pb-10 rounded-lg">
-          <h1 style={{ fontFamily: 'Noto Sans, sans-serif' }} className="text-3xl md:text-4xl font-semibold text-white mb-6 leading-tight font-sans">
-            Write Script for your YouTube Video in 3 Minutes
+      <section className="bg-white flex items-center justify-center px-4 sm:px-6 md:px-8">
+        <div className="max-w-7xl mx-auto text-center bg-[#0c0d10]/90 py-6 sm:py-8 md:py-10 px-4 sm:px-6 md:px-12 lg:px-24 xl:px-36 pb-6 sm:pb-8 md:pb-10 rounded-lg">
+          <h1 style={{ fontFamily: 'Noto Sans, sans-serif' }} className="text-2xl sm:text-3xl md:text-4xl font-semibold text-white mb-4 sm:mb-5 md:mb-6 leading-tight font-sans">
+            Write Script for your YouTube Video in<br className="sm:hidden" /> 3 Minutes
             {/* <span className="bg-black text-white px-2 py-1 rounded text-3xl md:text-4xl font-semibold">
               3 Minutes
             </span> */}
           </h1>
-          <p style={{ fontFamily: 'Noto Sans, sans-serif' }} className="text-sm md:text-lg text-white mb-0 leading-relaxed max-w-5xl mx-auto font-normal">
+          <p style={{ fontFamily: 'Noto Sans, sans-serif' }} className="text-xs sm:text-sm md:text-lg text-white mb-0 leading-relaxed max-w-5xl mx-auto font-normal px-2 sm:px-0">
           AI that transforms your ideas into engaging, factual, research-backed YouTube scripts.
           </p>
         </div>
@@ -96,7 +96,7 @@ export default function Home() {
 
     {/* Main Content Section - Dark Background */}
     <section className="pb-3">
-        <div className="max-w-6xl mx-auto px-6 py-8">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 py-6 sm:py-8">
 
             {/* Type Selection Toggle */}
             {/* <div className="flex justify-center mb-8">
@@ -131,22 +131,23 @@ export default function Home() {
             </div> */}
 
             {/* Search Section */}
-            <div className="max-w-4xl mx-auto mb-10 shadow-lg border border-gray-400 rounded-lg mt-4">
+            <div className="max-w-4xl mx-auto mb-6 sm:mb-8 md:mb-10 shadow-lg border border-gray-400 rounded-lg mt-4">
               <div className="relative flex items-center">
-                <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 w-6 h-6 z-10" />
+                <Search className="absolute left-3 sm:left-4 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4 sm:w-5 sm:h-5 md:w-6 md:h-6 z-10" />
                 <Input
                   type="text"
                   placeholder="Search for topics, current events, and documentary ideas"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   onKeyPress={(e) => e.key === 'Enter' && handleSearch(searchQuery)}
-                  className="pl-14 pr-32 py-7 text-sm md:text-lg rounded-lg border-0 bg-white text-black placeholder-gray-500 focus:bg-white focus:ring-2 focus:ring-gray-400 font-sans w-full"
+                  className="pl-10 sm:pl-12 md:pl-14 pr-20 sm:pr-24 md:pr-32 py-4 sm:py-5 md:py-7 text-xs sm:text-sm md:text-lg rounded-lg border-0 bg-white text-black placeholder-gray-500 focus:bg-white focus:ring-2 focus:ring-gray-400 font-sans w-full"
                 />
                 <Button
                   onClick={() => handleSearch(searchQuery)}
-                  className="absolute right-2 top-1/2 transform -translate-y-1/2 rounded-lg bg-black text-white hover:bg-gray-800 hover:shadow-xl hover:scale-105 px-6 py-6 text-lg font-medium font-sans transition-all duration-300 ease-in-out"
+                  className="absolute right-1.5 sm:right-2 top-1/2 transform -translate-y-1/2 rounded-lg bg-black text-white hover:bg-gray-800 hover:shadow-xl hover:scale-105 px-3 sm:px-4 md:px-6 py-3 sm:py-4 md:py-6 text-xs sm:text-sm md:text-lg font-medium font-sans transition-all duration-300 ease-in-out"
                 >
-                  Generate Ideas
+                  <span className="hidden sm:inline">Generate Ideas</span>
+                  <span className="sm:hidden">Generate</span>
                 </Button>
               </div>
             </div>
@@ -154,20 +155,21 @@ export default function Home() {
             {/* Trending Topics Section */}
             <div className="max-w-8xl mx-auto">
               <div className="flex justify-center">
-                <div className="flex flex-wrap gap-3 items-center justify-center">
+                <div className="flex flex-wrap gap-2 sm:gap-3 items-center justify-center">
                   <Button
                     variant="outline"
-                    className="h-auto px-4 py-1 text-lg font-bold rounded-lg border-2 bg-black text-white whitespace-nowrap font-sans flex items-center pointer-events-none"
+                    className="h-auto px-3 sm:px-4 py-1 text-xs sm:text-base md:text-lg font-bold rounded-lg border-2 bg-black text-white whitespace-nowrap font-sans flex items-center pointer-events-none"
                   >
-                    Trending Topics
-                    <TrendingUp className="w-6 h-6 ml-1" />
+                    <span className="hidden sm:inline">Trending Topics</span>
+                    <span className="sm:hidden">Trending</span>
+                    <TrendingUp className="w-4 h-4 sm:w-5 sm:h-5 md:w-6 md:h-6 ml-1" />
                   </Button>
                   {currentSuggestions.slice(0, 10).map((topic, index) => (
                     <Button
                       key={index}
                       variant="outline"
                       onClick={() => handleSuggestionClick(topic)}
-                      className="h-auto px-6 py-2 text-md font-medium transition-all duration-300 ease-in-out transform rounded-lg border-0 bg-white text-gray-500 hover:bg-gray-50 hover:shadow-lg hover:scale-105 hover:-translate-y-1 whitespace-nowrap font-sans group shadow-lg"
+                      className="h-auto px-3 sm:px-4 md:px-6 py-1.5 sm:py-2 text-xs sm:text-md md:text-base font-medium transition-all duration-300 ease-in-out transform rounded-lg border-0 bg-white text-gray-500 hover:bg-gray-50 hover:shadow-lg hover:scale-105 hover:-translate-y-1 whitespace-nowrap font-sans group shadow-lg"
                     >
                       <span className="transition-colors duration-300 group-hover:text-gray-800">
                         {topic}
@@ -181,71 +183,71 @@ export default function Home() {
       </section>
 
       {/* Why it is different? Section */}
-      <section className="py-12 bg-white">
-        <div className="container mx-auto px-16">
-          <h2 style={{ fontFamily: 'Noto Sans, sans-serif' }} className="text-3xl md:text-4xl font-medium pl-8 text-left mb-12">Why it is different?</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-            <div className="bg-[#1a1a1a] text-white p-6 rounded-lg shadow-lg">
-              <h3 className="text-xl font-bold mb-4">
+      <section className="py-8 sm:py-10 md:py-12 bg-white">
+        <div className="container mx-auto px-4 sm:px-6 md:px-8 lg:px-12 xl:px-16">
+          <h2 style={{ fontFamily: 'Noto Sans, sans-serif' }} className="text-2xl sm:text-3xl md:text-4xl font-medium pl-0 sm:pl-4 md:pl-8 text-left mb-6 sm:mb-8 md:mb-12">Why it is different?</h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6 md:gap-8">
+            <div className="bg-[#1a1a1a] text-white p-4 sm:p-5 md:p-6 rounded-lg shadow-lg">
+              <h3 className="text-lg sm:text-xl font-bold mb-3 sm:mb-4">
                   Triggered Chain-of-Actions (TCA) Intelligence
               </h3>
               <div className="flex flex-col md:flex-row items-center">
                 <div className="md:w-1/2 w-full flex justify-center mb-4 md:mb-0">
-                  <BrainCircuit className="w-1/2 h-auto" />
+                  <BrainCircuit className="w-2/3 sm:w-1/2 h-auto max-w-[120px] sm:max-w-none" />
                 </div>
                 <div className="md:w-1/2 w-full text-center md:text-left">
-                  <p className="mb-4">
+                  <p className="mb-3 sm:mb-4 text-sm sm:text-base">
                     Unlike LLMs&#39; single-response model, our system runs multi-step reasoning workflows automatically
                   </p>
-                  <Button variant="secondary">Read More</Button>
+                  <Button variant="secondary" className="text-xs sm:text-sm">Read More</Button>
                 </div>
               </div>
             </div>
-            <div className="bg-[#1a1a1a] text-white p-6 rounded-lg shadow-lg">
-              <h3 className="text-xl font-bold mb-4">
+            <div className="bg-[#1a1a1a] text-white p-4 sm:p-5 md:p-6 rounded-lg shadow-lg">
+              <h3 className="text-lg sm:text-xl font-bold mb-3 sm:mb-4">
                   Triggered Chain-of-Actions (TCA) Intelligence
               </h3>
               <div className="flex flex-col md:flex-row items-center">
                 <div className="md:w-1/2 w-full flex justify-center mb-4 md:mb-0">
-                  <BrainCircuit className="w-1/2 h-auto" />
+                  <BrainCircuit className="w-2/3 sm:w-1/2 h-auto max-w-[120px] sm:max-w-none" />
                 </div>
                 <div className="md:w-1/2 w-full text-center md:text-left">
-                  <p className="mb-4">
+                  <p className="mb-3 sm:mb-4 text-sm sm:text-base">
                     Unlike LLMs&#39; single-response model, our system runs multi-step reasoning workflows automatically
                   </p>
-                  <Button variant="secondary">Read More</Button>
+                  <Button variant="secondary" className="text-xs sm:text-sm">Read More</Button>
                 </div>
               </div>
             </div>
-            <div className="bg-[#1a1a1a] text-white p-6 rounded-lg shadow-lg">
-              <h3 className="text-xl font-bold mb-4">
+            <div className="bg-[#1a1a1a] text-white p-4 sm:p-5 md:p-6 rounded-lg shadow-lg">
+              <h3 className="text-lg sm:text-xl font-bold mb-3 sm:mb-4">
                   Triggered Chain-of-Actions (TCA) Intelligence
               </h3>
               <div className="flex flex-col md:flex-row items-center">
                 <div className="md:w-1/2 w-full flex justify-center mb-4 md:mb-0">
-                  <BrainCircuit className="w-1/2 h-auto" />
+                  <BrainCircuit className="w-2/3 sm:w-1/2 h-auto max-w-[120px] sm:max-w-none" />
                 </div>
                 <div className="md:w-1/2 w-full text-center md:text-left">
-                  <p className="mb-4">
+                  <p className="mb-3 sm:mb-4 text-sm sm:text-base">
                     Unlike LLMs&#39; single-response model, our system runs multi-step reasoning workflows automatically
                   </p>
-                  <Button variant="secondary">Read More</Button>
+                  <Button variant="secondary" className="text-xs sm:text-sm">Read More</Button>
                 </div>
               </div>
             </div>
-            <div className="bg-[#1a1a1a] text-white p-6 rounded-lg shadow-lg">
-              <h3 className="text-xl font-bold mb-4">
+            <div className="bg-[#1a1a1a] text-white p-4 sm:p-5 md:p-6 rounded-lg shadow-lg">
+              <h3 className="text-lg sm:text-xl font-bold mb-3 sm:mb-4">
                   Triggered Chain-of-Actions (TCA) Intelligence
               </h3>
               <div className="flex flex-col md:flex-row items-center">
                 <div className="md:w-1/2 w-full flex justify-center mb-4 md:mb-0">
-                  <BrainCircuit className="w-1/2 h-auto" />
+                  <BrainCircuit className="w-2/3 sm:w-1/2 h-auto max-w-[120px] sm:max-w-none" />
                 </div>
                 <div className="md:w-1/2 w-full text-center md:text-left">
-                  <p className="mb-4">
+                  <p className="mb-3 sm:mb-4 text-sm sm:text-base">
                     Unlike LLMs&#39; single-response model, our system runs multi-step reasoning workflows automatically
                   </p>
-                  <Button variant="secondary">Read More</Button>
+                  <Button variant="secondary" className="text-xs sm:text-sm">Read More</Button>
                 </div>
               </div>
             </div>
