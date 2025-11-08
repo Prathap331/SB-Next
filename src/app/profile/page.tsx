@@ -20,7 +20,9 @@ import {
   DollarSign,
   Download,
   ExternalLink,
-  LogOut
+  LogOut,
+  Menu,
+  X
 } from 'lucide-react';
 
 export default function Profile() {
@@ -39,6 +41,7 @@ export default function Profile() {
   });
 
   const [editData, setEditData] = useState(profileData);
+  const [isMobileNavOpen, setIsMobileNavOpen] = useState(false);
 
   const handleEdit = () => {
     setIsEditing(true);
@@ -148,64 +151,98 @@ export default function Profile() {
     { id: 'billing', label: 'Billing', icon: CreditCard }
   ];
 
+  const navigationContent = (
+    <div className="space-y-2">
+      <Card className="shadow-lg">
+        <CardContent className="p-4">
+          <nav className="space-y-2">
+            {menuItems.map((item) => {
+              const Icon = item.icon;
+              return (
+                <button
+                  key={item.id}
+                  onClick={() => {
+                    setActiveTab(item.id);
+                    setIsMobileNavOpen(false);
+                  }}
+                  className={`w-full flex items-center space-x-3 px-4 py-3 rounded-lg text-left transition-colors ${
+                    activeTab === item.id
+                      ? 'bg-black text-white border border-black'
+                      : 'text-gray-600 hover:bg-gray-100'
+                  }`}
+                >
+                  <Icon className="w-5 h-5" />
+                  <span className="font-medium">{item.label}</span>
+                </button>
+              );
+            })}
+          </nav>
+        </CardContent>
+      </Card>
+
+      <Card className="shadow-lg">
+        <CardContent className="p-4">
+          <Button
+            onClick={handleLogout}
+            variant="outline"
+            className="w-full flex items-center justify-center space-x-2 text-gray-600 hover:text-gray-700 hover:bg-gray-50 border-gray-200"
+          >
+            <LogOut className="w-5 h-5" />
+            <span className="font-medium">Logout</span>
+          </Button>
+        </CardContent>
+      </Card>
+    </div>
+  );
+
   return (
     <div className="min-h-screen bg-white">
       <Header />
       
-      <div className="container mx-auto px-16 py-8">
-        <div className="mb-8">
+      <div className="container mx-auto px-4 sm:px-6 md:px-8 lg:px-12 xl:px-16 py-6 sm:py-8">
+        <div className="mb-6 sm:mb-8">
           <h1 className="text-3xl font-bold text-gray-900 mb-2">My Profile</h1>
           <p className="text-gray-600">Manage your account settings and view your content</p>
         </div>
 
-        <div className="flex gap-8">
-          {/* Left Navigation */}
-          <div className="w-64 space-y-2">
-            <Card className="shadow-lg">
-              <CardContent className="p-4">
-                <nav className="space-y-2">
-                  {menuItems.map((item) => {
-                    const Icon = item.icon;
-                    return (
-                      <button
-                        key={item.id}
-                        onClick={() => setActiveTab(item.id)}
-                        className={`w-full flex items-center space-x-3 px-4 py-3 rounded-lg text-left transition-colors ${
-                          activeTab === item.id
-                            ? 'bg-black text-white border border-black'
-                            : 'text-gray-600 hover:bg-gray-100'
-                        }`}
-                      >
-                        <Icon className="w-5 h-5" />
-                        <span className="font-medium">{item.label}</span>
-                      </button>
-                    );
-                  })}
-                </nav>
-              </CardContent>
-            </Card>
-            
-            {/* Logout Button */}
-            <Card className="shadow-lg">
-              <CardContent className="p-4">
-                <Button
-                  onClick={handleLogout}
-                  variant="outline"
-                  className="w-full flex items-center justify-center space-x-2 text-gray-600 hover:text-gray-700 hover:bg-gray-50 border-gray-200"
-                >
-                  <LogOut className="w-5 h-5" />
-                  <span className="font-medium">Logout</span>
+        <div className="mb-4 flex lg:hidden justify-start">
+          <Button variant="outline" onClick={() => setIsMobileNavOpen(true)} className="flex items-center space-x-2">
+            <Menu className="w-5 h-5" />
+          </Button>
+        </div>
+
+        {isMobileNavOpen && (
+          <>
+            <div
+              className="fixed inset-0 bg-black/40 backdrop-blur-[1px] z-40"
+              onClick={() => setIsMobileNavOpen(false)}
+              aria-hidden="true"
+            />
+            <div className="fixed top-0 left-0 bottom-0 z-50 w-72 max-w-full bg-white shadow-2xl p-4 flex flex-col space-y-4 overflow-y-auto">
+              <div className="flex items-center justify-between">
+                <h2 className="text-lg font-semibold text-gray-900">Profile Menu</h2>
+                <Button variant="ghost" size="icon" onClick={() => setIsMobileNavOpen(false)}>
+                  <X className="w-5 h-5" />
+                  <span className="sr-only">Close menu</span>
                 </Button>
-              </CardContent>
-            </Card>
+              </div>
+              {navigationContent}
+            </div>
+          </>
+        )}
+
+        <div className="flex flex-col lg:flex-row gap-6 lg:gap-8">
+          {/* Left Navigation */}
+          <div className="hidden lg:block w-64">
+            {navigationContent}
           </div>
 
           {/* Main Content */}
-          <div className="flex-1">
+          <div className="flex-1 space-y-6">
             {activeTab === 'profile' && (
               <Card className="shadow-lg">
                 <CardHeader>
-                  <div className="flex items-center justify-between">
+                  <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
                     <div>
                       <CardTitle className="flex items-center">
                         <User className="w-5 h-5 mr-2" />
@@ -216,17 +253,17 @@ export default function Profile() {
                       </CardDescription>
                     </div>
                     {!isEditing ? (
-                      <Button onClick={handleEdit} variant="outline">
+                      <Button onClick={handleEdit} variant="outline" className="w-full sm:w-auto">
                         <Edit className="w-4 h-4 mr-2" />
                         Edit
                       </Button>
                     ) : (
-                      <div className="flex space-x-2">
-                        <Button onClick={handleSave} size="sm">
+                      <div className="flex flex-col sm:flex-row gap-2">
+                        <Button onClick={handleSave} size="sm" className="w-full sm:w-auto">
                           <Save className="w-4 h-4 mr-2" />
                           Save
                         </Button>
-                        <Button onClick={handleCancel} variant="outline" size="sm">
+                        <Button onClick={handleCancel} variant="outline" size="sm" className="w-full sm:w-auto">
                           Cancel
                         </Button>
                       </div>
@@ -234,7 +271,7 @@ export default function Profile() {
                   </div>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                  <div className="grid grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
                       <Label htmlFor="name">Full Name</Label>
                       <Input
@@ -335,10 +372,10 @@ export default function Profile() {
                 <CardContent>
                   <div className="space-y-4">
                     {myScripts.map((script) => (
-                      <div key={script.id} className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
-                        <div className="flex-1">
+                      <div key={script.id} className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 p-4 bg-gray-50 rounded-lg">
+                        <div className="flex-1 w-full">
                           <h3 className="font-semibold text-gray-900">{script.title}</h3>
-                          <div className="flex items-center space-x-4 text-sm text-gray-600 mt-1">
+                          <div className="flex flex-wrap items-center gap-2 sm:gap-4 text-sm text-gray-600 mt-1">
                             <span>Created: {script.createdAt}</span>
                             <span>{script.words} words</span>
                             <Badge variant={script.status === 'Published' ? 'default' : 'secondary'}>
@@ -349,6 +386,7 @@ export default function Profile() {
                         <Button 
                           variant="outline" 
                           size="sm"
+                          className="w-full sm:w-auto"
                           onClick={() => handleViewScript(script.id)}
                         >
                           <ExternalLink className="w-4 h-4 mr-2" />
@@ -373,7 +411,7 @@ export default function Profile() {
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <div className="grid grid-cols-2 gap-6">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div className="space-y-4">
                       <div>
                         <Label className="text-sm font-medium text-gray-600">Current Plan</Label>
@@ -409,9 +447,9 @@ export default function Profile() {
                       </div>
                     </div>
                   </div>
-                  <div className="flex space-x-4 mt-6">
-                    <Button onClick={handleUpgrade}>Upgrade Plan</Button>
-                    <Button variant="outline">Cancel Subscription</Button>
+                  <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 mt-6">
+                    <Button onClick={handleUpgrade} className="w-full sm:w-auto">Upgrade Plan</Button>
+                    <Button variant="outline" className="w-full sm:w-auto">Cancel Subscription</Button>
                   </div>
                 </CardContent>
               </Card>
@@ -433,22 +471,23 @@ export default function Profile() {
                     <h3 className="font-semibold text-gray-900">Billing History</h3>
                     <div className="space-y-3">
                       {billingHistory.map((bill) => (
-                        <div key={bill.id} className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
-                          <div className="flex items-center space-x-4">
+                        <div key={bill.id} className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 p-4 bg-gray-50 rounded-lg">
+                          <div className="flex items-center gap-3">
                             <DollarSign className="w-5 h-5 text-black" />
                             <div>
                               <div className="font-medium text-gray-900">{bill.plan}</div>
                               <div className="text-sm text-gray-600">{bill.date}</div>
                             </div>
                           </div>
-                          <div className="flex items-center space-x-3">
+                          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 sm:gap-3">
                             <span className="font-semibold text-gray-900">{bill.amount}</span>
-                            <Badge variant="default" className="bg-black text-white">
+                            <Badge variant="default" className="bg-black text-white w-max">
                               {bill.status}
                             </Badge>
                             <Button
                               variant="outline"
                               size="sm"
+                              className="w-full sm:w-auto"
                               onClick={() => downloadInvoice(bill.id)}
                             >
                               <Download className="w-4 h-4 mr-2" />

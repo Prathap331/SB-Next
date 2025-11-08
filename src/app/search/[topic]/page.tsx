@@ -297,23 +297,24 @@ export default function SearchTopicPage() {
       />
 
 
-      <div className="container mx-auto px-16 py-8">
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">
+      <div className="container mx-auto px-4 sm:px-6 md:px-8 lg:px-12 xl:px-16 py-6 sm:py-8">
+        <div className="mb-6 sm:mb-8">
+          <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold text-gray-900 mb-2">
             Script Ideas for:{" "}
-            <span className="bg-black text-white px-2 py-1 rounded font-semibold">
+            <br className="sm:hidden" />
+            <span className="bg-black text-white px-2 py-1 rounded font-semibold mt-4">
               {topic}
             </span>
           </h1>
-          <p className="text-gray-600">Choose from various problem statements and perspectives for your YouTube script</p>
+          <p className="text-sm sm:text-base text-gray-600">Choose from various problem statements and perspectives for your YouTube script</p>
         </div>
 
-        <div className="grid lg:grid-cols-4 gap-8">
+        <div className="grid gap-6 lg:grid-cols-4">
           <div className="lg:col-span-1">
-            <Card className="sticky top-24 shadow-lg">
-              <CardContent className="space-y-6">
+            <Card className="shadow-lg lg:sticky lg:top-24">
+              <CardContent className="space-y-6 pt-4">
                 <div>
-                  <label className="text-sm font-medium text-gray-700 mb-3 block pt-6">Category</label>
+                  <label className="text-sm font-medium text-gray-700 mb-3 block">Category</label>
                   <div className="space-y-2">
                     {['all', 'Technology', 'Social Impact', 'Economic Analysis', 'Historical', 'Future Analysis'].map((category) => (
                       <Button
@@ -337,8 +338,8 @@ export default function SearchTopicPage() {
           </div>
 
           <div className="lg:col-span-3">
-            <div className="mb-6 flex items-center justify-between">
-              <p className="text-gray-600">{isLoading ? 'Loading script ideas...' : `Found ${filtered.length} script ideas`}</p>
+            <div className="mb-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
+              <p className="text-sm sm:text-base text-gray-600">{isLoading ? 'Loading script ideas...' : `Found ${filtered.length} script ideas`}</p>
             </div>
 
             {isLoading && (
@@ -378,10 +379,10 @@ export default function SearchTopicPage() {
                 {filtered.map((statement) => (
                   <Card key={statement.id} className="hover:shadow-xl transition-all duration-300 hover:-translate-y-1 bg-white/80 backdrop-blur-sm">
                     <CardHeader>
-                      <div className="flex items-start justify-between mb-4">
-                        <div className="flex-1">
-                          <div className="flex items-center mb-2">
-                            <CardTitle className="text-xl mr-3">
+                      <div className="flex flex-col sm:flex-row items-start justify-between gap-3 mb-4">
+                        <div className="flex-1 w-full">
+                          <div className="flex flex-col sm:flex-row sm:items-center sm:space-x-3 mb-2">
+                            <CardTitle className="text-lg sm:text-xl">
                               {statement.title}
                             </CardTitle>
                             <Badge variant="secondary" className="bg-black text-white">
@@ -394,19 +395,19 @@ export default function SearchTopicPage() {
                       </div>
                     </CardHeader>
                     <CardContent>
-                      <div className="flex items-center justify-between">
+                      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
                         <Badge variant="secondary">{statement.category}</Badge>
 
-                          <div className="flex items-center space-x-3">
-                            <div className="flex items-center space-x-2">
-                              <label className="text-sm font-medium text-gray-700">Length (min):</label>
-                              <Input type="number" placeholder="10" value={videoLengths[statement.id] || ''} onChange={(e) => handleVideoLengthChange(statement.id, e.target.value)} className="w-20" min={1} max={60} />
-                            </div>
-                            <Button onClick={() => handleGenerateScript(statement)} className="bg-gradient-to-r from-gray-500 to-black hover:from-gray-600 hover:to-black text-white font-semibold" disabled={!videoLengths[statement.id]?.trim()} size="sm">
-                              <Clock className="w-4 h-4 mr-2" />
-                              Generate Script
-                            </Button>
+                        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 sm:gap-3 w-full sm:w-auto">
+                          <div className="flex items-center space-x-2">
+                            <label className="text-sm font-medium text-gray-700">Length (min):</label>
+                            <Input type="number" placeholder="10" value={videoLengths[statement.id] || ''} onChange={(e) => handleVideoLengthChange(statement.id, e.target.value)} className="w-20" min={1} max={60} />
                           </div>
+                          <Button onClick={() => handleGenerateScript(statement)} className="bg-gradient-to-r from-gray-500 to-black hover:from-gray-600 hover:to-black text-white font-semibold w-full sm:w-auto" disabled={!videoLengths[statement.id]?.trim()} size="sm">
+                            <Clock className="w-4 h-4 mr-2" />
+                            Generate Script
+                          </Button>
+                        </div>
                       </div>
                     </CardContent>
                   </Card>
