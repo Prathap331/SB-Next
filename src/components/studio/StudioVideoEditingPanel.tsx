@@ -86,13 +86,13 @@ import {
   type PickedBrollItem,
 } from '@/lib/video-editor/broll-pick';
 import type { TimelineState, TimelineClip } from '@/lib/video-editor/types';
-import { readInfographicFromEditScene, parseRemotionInfographic, remotionInfographicLabel, remotionDurationSeconds, resolveInfographicStartSeconds, seededTextFromOverlayItem, kenBurnsFromTrack, mergeOverlayTrackOntoItem, rebaseOverlaySpec, rebaseSeededText, isOverlayGraphicTrack, collectSceneGraphicsOverlays, buildBeatAnimationUpdate, overlayDisplayTextForEditor, displayTextPayloadFromEditor, placementToPreviewOffsets, type RemotionInfographicSpec, type SeededTextOverlay } from '@/lib/video-editor/infographics';
+import { readInfographicFromEditScene, parseRemotionInfographic, remotionInfographicLabel, remotionDurationSeconds, resolveInfographicStartSeconds, seededTextFromOverlayItem, kenBurnsFromTrack, mergeOverlayTrackOntoItem, rebaseOverlaySpec, rebaseSeededText, isOverlayGraphicTrack, collectSceneGraphicsOverlays, buildBeatAnimationUpdate, overlayDisplayTextForEditor, displayTextPayloadFromEditor, overlayGeometryFromClip, placementToPreviewOffsets, translateOverlayMotion, type RemotionInfographicSpec, type SeededTextOverlay } from '@/lib/video-editor/infographics';
 import { audioWindowSeconds, frameWindowSeconds, toSceneLocalSeconds } from '@/lib/video-editor/timings';
 import { TimelinePanel, TimelinePreview, TimelineClipView } from '@/components/studio/video-timeline';
 import { TRACK_ROW_HEIGHT } from '@/components/studio/video-timeline/trackLayout';
 import { RemotionInfographicPreview } from '@/remotion/RemotionInfographicPreview';
 import { LucideIconView } from '@/remotion/icons';
-import { placementToDesignPx } from '@/remotion/placement';
+import { placementFromPreviewOffsets, placementToDesignPx, previewOffsetsFromGeometryPx, type OverlayGeometryPx } from '@/remotion/placement';
 import { formatTimecode, formatTimecodeShort } from '@/lib/video-editor/timecode';
 import { EDITOR_FPS } from '@/lib/video-editor/fps';
 import {
@@ -3184,6 +3184,49 @@ export function StudioVideoEditingPanel({
     [timelineApi, recordPendingOverlay],
   );
 
+  const applyOverlayGeometry = useCallback(
+    (clipId: string, geometry: OverlayGeometryPx, fontSize: number) => {
+      const clip = findTimelineClip(timelineApi.timeline, clipId);
+      if (!clip) return;
+      const previous = overlayGeometryFromClip(clip);
+      const dx = geometry.x - previous.x;
+      const dy = geometry.y - previous.y;
+      const offsets = previewOffsetsFromGeometryPx(geometry);
+      const placement = placementFromPreviewOffsets(offsets.offsetX, offsets.offsetY);
+      const remotion = clip.remotion;
+      const motion = remotion ? translateOverlayMotion(remotion.props.motion, dx, dy) : undefined;
+      timelineApi.updateClip(clip.id, {
+        placement,
+        offsetX: offsets.offsetX,
+        offsetY: offsets.offsetY,
+        remotion: remotion
+          ? {
+              ...remotion,
+              placement,
+              props: {
+                ...remotion.props,
+                geometryPx: geometry,
+                fontSize,
+                font_size: fontSize,
+                ...(motion ? { motion } : {}),
+              },
+            }
+          : remotion,
+      });
+      if (clip.type === 'text') {
+        setTextStyle((t) => ({
+          ...t,
+          fontSize,
+          offsetX: offsets.offsetX,
+          offsetY: offsets.offsetY,
+        }));
+      }
+      const sceneId = clip.sceneId || selectedIdRef.current;
+      if (sceneId) recordPendingOverlay(sceneId, clip.id);
+    },
+    [timelineApi, recordPendingOverlay],
+  );
+
   const applyInfographicColor = useCallback(
     (clip: TimelineClip, hex: string) => {
       timelineApi.updateClip(clip.id, {
@@ -3954,6 +3997,7 @@ export function StudioVideoEditingPanel({
               setTextStyle((t) => ({ ...t, fontSize }));
               if (selected) recordPendingOverlay(selected.id, undefined, ['text']);
             }}
+            onOverlayTransform={applyOverlayGeometry}
             onTextEdit={(clipId, text) => {
               timelineApi.updateClip(clipId, { text, name: text.slice(0, 48) || 'Text' });
               if (selected) recordPendingOverlay(selected.id, clipId);
@@ -4566,6 +4610,7 @@ export function StudioVideoEditingPanel({
               setTextStyle((t) => ({ ...t, fontSize }));
               if (selected) recordPendingOverlay(selected.id, undefined, ['text']);
             }}
+            onOverlayTransform={applyOverlayGeometry}
             onTextEdit={(clipId, text) => {
               timelineApi.updateClip(clipId, { text, name: text.slice(0, 48) || 'Text' });
               if (selected) recordPendingOverlay(selected.id, clipId);

@@ -422,6 +422,7 @@ export interface BeatAnimationUpdate {
   display_text?: string | string[] | null;
   color_hint?: string | null;
   background_color_hint?: string | null;
+  font_size?: number | null;
   highlight_target_text?: string | null;
   render_prompt?: string | null;
   render_engine_hint?: string | null;

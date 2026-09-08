@@ -5,6 +5,8 @@ import {
   enrichRemotionFromSpecs,
   framesToSeconds,
   isOverlayGraphicTrack,
+  overlayGeometryFromClip,
+  overlayFontSizeFromClip,
   parseRemotionInfographic,
   readInfographicFromEditScene,
   remotionInfographicLabel,
@@ -12,6 +14,7 @@ import {
   resolveInfographicStartSeconds,
   sceneLocalOverlayStart,
   seededTextFromOverlayItem,
+  translateOverlayMotion,
 } from './infographics';
 import { remotionPayloadFromSpec } from './infographics';
 import { clipRemotionToInfographicData, specToInfographicData } from '@/remotion/data';
@@ -304,16 +307,50 @@ describe('remotion infographic timing', () => {
     expect(enriched.props.icon_name).toEqual(['heart', 'users', 'sparkles']);
   });
 
+  it('keeps clip geometry and font size when enriching from library specs', () => {
+    const spec = parseRemotionInfographic({
+      track_id: 'anim_s1',
+      animation_type: 'icon_pop_in',
+      icon_name: 'globe',
+      geometry_px: { x: 1696, y: 64, width: 160, height: 160 },
+      startFrame: 0,
+      endFrame: 90,
+    })!;
+    const remotion = remotionPayloadFromSpec({
+      ...spec,
+      props: {
+        ...spec.props,
+        geometryPx: { x: 200, y: 300, width: 240, height: 240 },
+        fontSize: 42,
+      },
+    });
+    const enriched = enrichRemotionFromSpecs(remotion, [spec], {
+      overlayId: spec.overlayId,
+      remotion,
+    });
+    expect(enriched.props.geometryPx).toEqual({ x: 200, y: 300, width: 240, height: 240 });
+    expect(enriched.props.fontSize).toBe(42);
+    expect(enriched.props.icon_name).toBe('globe');
+  });
+
+  it('translates overlay motion with a drag delta', () => {
+    expect(
+      translateOverlayMotion({ startX: 100, startY: 80, endX: 140, endY: 80, style: 'slide' }, 20, -10),
+    ).toEqual({ startX: 120, startY: 70, endX: 160, endY: 70, style: 'slide' });
+  });
+
   it('parses geometry_px and displayText for overlay compositions', () => {
     const spec = parseRemotionInfographic({
       animation_type: 'lower_third',
       display_text: 'Cleopatra',
       color_hint: '#F5A623',
       geometry_px: { x: 80, y: 860, width: 640, height: 140 },
+      font_size: 36,
       start: 1,
       end: 3,
     });
     expect(spec?.props.geometryPx).toEqual({ x: 80, y: 860, width: 640, height: 140 });
+    expect(spec?.props.fontSize).toBe(36);
     expect(spec?.props.displayText).toBe('Cleopatra');
     expect(spec?.props.colorHint).toBe('#F5A623');
     expect(spec?.props.title).toBe('Cleopatra');
@@ -527,6 +564,7 @@ describe('beat animation update payload', () => {
     expect(payload?.animation_type).toBe('fade_in');
     expect(payload?.display_text).toBe('Hello');
     expect(payload?.placement).toBe('top_right');
+    expect(payload?.font_size).toBe(72);
     expect(payload?.geometry_px).toEqual(expect.objectContaining({ width: expect.any(Number), height: expect.any(Number) }));
     expect(payload?.color_hint).toBe('#ffcc00');
     expect(payload?.background_color_hint).toBeNull();
@@ -582,6 +620,38 @@ describe('beat animation update payload', () => {
     expect(payload?.placement).toBe('top_right');
     expect(payload?.geometry_px).toEqual({ x: 1696, y: 64, width: 160, height: 160 });
     expect(payload?.icon_name).toBe('globe');
+    expect(payload?.font_size).toBe(29);
+  });
+
+  it('sends resized geometry_px and font_size for a dragged infographic', () => {
+    const payload = buildBeatAnimationUpdate({
+      id: 'info-1',
+      trackId: 'track-infographic',
+      type: 'infographic',
+      name: 'Network',
+      text: 'Network',
+      start: 0,
+      duration: 4,
+      sourceStart: 0,
+      sourceDuration: 4,
+      placement: 'center_left',
+      remotion: {
+        compositionId: 'IconPop',
+        animationType: 'icon_pop_in',
+        durationFrames: 120,
+        trigger: 'scene_start',
+        placement: 'center_left',
+        props: {
+          displayText: 'Network',
+          icon_name: 'globe',
+          geometryPx: { x: 120, y: 400, width: 240, height: 240 },
+          fontSize: 42,
+        },
+      },
+    } as never);
+    expect(payload?.placement).toBe('center_left');
+    expect(payload?.geometry_px).toEqual({ x: 120, y: 400, width: 240, height: 240 });
+    expect(payload?.font_size).toBe(42);
   });
 
   it('sends background_color_hint from infographic props', () => {
@@ -606,5 +676,32 @@ describe('beat animation update payload', () => {
       },
     } as never);
     expect(payload?.background_color_hint).toBe('#111827');
+  });
+
+  it('resolves overlay geometry from explicit geometry_px', () => {
+    const geo = overlayGeometryFromClip({
+      id: 'info-1',
+      trackId: 'track-infographic',
+      type: 'infographic',
+      name: 'Icon',
+      start: 0,
+      duration: 2,
+      sourceStart: 0,
+      sourceDuration: 2,
+      placement: 'top_right',
+      remotion: {
+        compositionId: 'IconPop',
+        animationType: 'icon_pop_in',
+        durationFrames: 60,
+        placement: 'top_right',
+        props: { geometryPx: { x: 200, y: 120, width: 220, height: 220 }, fontSize: 40 },
+      },
+    } as never);
+    expect(geo).toEqual({ x: 200, y: 120, width: 220, height: 220 });
+    expect(
+      overlayFontSizeFromClip({
+        remotion: { props: { fontSize: 40, geometryPx: geo } },
+      } as never),
+    ).toBe(40);
   });
 });

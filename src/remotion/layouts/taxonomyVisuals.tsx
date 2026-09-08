@@ -49,6 +49,7 @@ type BaseAnim = {
   iconLayout?: string;
   highlight?: string;
   motion: MotionXY | null;
+  fontSize?: number;
 };
 
 function defaultGeometry(type: string): GeometryPx {
@@ -147,6 +148,7 @@ function ClockIconRow({
     >
       {p.icons.map((name, index) => {
         const appear = interp(clock.frame, [index * 6, index * 6 + 8], [0, 1]);
+        const box = size + Math.max(8, Math.round(size * 0.35));
         return (
           <div
             key={`${name}-${index}`}
@@ -156,8 +158,8 @@ function ClockIconRow({
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              width: size + 20,
-              height: size + 20,
+              width: box,
+              height: box,
               borderRadius: 14,
               backgroundColor: 'rgba(12, 16, 22, 0.55)',
               boxShadow: `0 0 16px ${p.color}44`,
@@ -169,6 +171,16 @@ function ClockIconRow({
       })}
     </div>
   );
+}
+
+function readOverlayFontSize(props: Record<string, unknown>): number | undefined {
+  const raw = props.fontSize ?? props.font_size;
+  return typeof raw === 'number' && Number.isFinite(raw) && raw > 0 ? raw : undefined;
+}
+
+function overlayTextSize(p: BaseAnim, fallback: number): number {
+  if (p.fontSize && p.fontSize > 0) return p.fontSize;
+  return Math.max(12, Math.round(p.geometry.height * 0.18) || fallback);
 }
 
 function readGeometry(
@@ -252,6 +264,7 @@ function readBase(data: InfographicData): BaseAnim {
       typeof data.props.iconLayout === 'string' ? data.props.iconLayout : undefined,
     highlight: readNonEmptyString(data.props, 'highlightTargetText'),
     motion: readMotion(data.props),
+    fontSize: readOverlayFontSize(data.props),
   };
 }
 
@@ -269,6 +282,10 @@ function motionProgress(clock: Clock, motion: MotionXY | null): number {
 function xyAt(clock: Clock, p: BaseAnim): { x: number; y: number } {
   const { geometry: g, motion } = p;
   if (!motion) return { x: g.x, y: g.y };
+  const pathDx = Math.abs(motion.endX - motion.startX);
+  const pathDy = Math.abs(motion.endY - motion.startY);
+  // Style-only / in-place pop: keep the user-placed geometry box.
+  if (pathDx < 1 && pathDy < 1) return { x: g.x, y: g.y };
   const t = motionProgress(clock, motion);
   return {
     x: motion.startX + (motion.endX - motion.startX) * t,
@@ -442,8 +459,8 @@ function LowerThird({ p, clock }: { p: BaseAnim; clock: Clock }) {
           borderLeft: `6px solid ${p.color}`,
         })}
       >
-        <ClockIconRow p={p} clock={clock} size={32} stacked={false} />
-        <span style={{ color: 'white', fontSize: 40, fontWeight: 700, fontFamily: 'Arial Black, sans-serif' }}>
+        <ClockIconRow p={p} clock={clock} size={Math.max(18, Math.round(overlayTextSize(p, 32)))} stacked={false} />
+        <span style={{ color: 'white', fontSize: overlayTextSize(p, 40), fontWeight: 700, fontFamily: 'Arial Black, sans-serif' }}>
           {p.text}
         </span>
       </div>
@@ -467,11 +484,11 @@ function KineticCaption({ p, clock }: { p: BaseAnim; clock: Clock }) {
           gap: 12,
         })}
       >
-        <ClockIconRow p={p} clock={clock} size={40} />
+        <ClockIconRow p={p} clock={clock} size={Math.max(18, Math.round(overlayTextSize(p, 40)))} />
         <span
           style={{
             color: 'white',
-            fontSize: 56,
+            fontSize: overlayTextSize(p, 56),
             fontWeight: 900,
             textShadow: `0 0 20px ${p.color}`,
             textAlign: 'center',
@@ -500,8 +517,8 @@ function CalloutTextbox({ p, clock }: { p: BaseAnim; clock: Clock }) {
           gap: 16,
         })}
       >
-        <ClockIconRow p={p} clock={clock} size={32} stacked={false} />
-        <span style={{ color: 'white', fontSize: 34, fontWeight: 600, lineHeight: 1.3 }}>
+        <ClockIconRow p={p} clock={clock} size={Math.max(18, Math.round(overlayTextSize(p, 32)))} stacked={false} />
+        <span style={{ color: 'white', fontSize: overlayTextSize(p, 34), fontWeight: 600, lineHeight: 1.3 }}>
           {p.lines.length > 1 ? p.lines.join('\n') : p.text}
         </span>
       </div>
@@ -521,9 +538,9 @@ function LogoWatermark({ p, clock }: { p: BaseAnim; clock: Clock }) {
           gap: 10,
         })}
       >
-        <LucideSvg name={p.icons[0]} size={32} color={p.color} />
+        <LucideSvg name={p.icons[0]} size={Math.max(18, overlayTextSize(p, 32))} color={p.color} />
         {p.text ? (
-          <span style={{ color: 'white', fontSize: 26, fontWeight: 700 }}>{p.text}</span>
+          <span style={{ color: 'white', fontSize: overlayTextSize(p, 26), fontWeight: 700 }}>{p.text}</span>
         ) : null}
       </div>
     </Fill>
@@ -782,9 +799,11 @@ function IconGraphic({ p, clock }: { p: BaseAnim; clock: Clock }) {
   const layout = (p.iconLayout || (names.length > 1 ? 'sequence' : 'cluster')).toLowerCase();
   const isPop = p.type === 'icon_pop_in' || names.length <= 1;
   const { x, y } = xyAt(clock, p);
+  const minSide = Math.min(p.geometry.width, p.geometry.height) || 160;
+  const count = Math.max(1, names.length);
   const iconBox = isPop
-    ? Math.max(96, Math.min(p.geometry.width, p.geometry.height) || 160)
-    : Math.max(88, Math.min(112, p.geometry.height * 0.45 || 88));
+    ? Math.max(48, minSide)
+    : Math.max(48, Math.min(p.geometry.height, p.geometry.width / count) * 0.9);
   const iconSize = Math.round(iconBox * 0.58);
   const connect = (p.motion?.style || p.type).toLowerCase().includes('connect');
   const growLeft = isRightPlacement(p.placement) || x > OVERLAY_DESIGN_W * 0.62;
@@ -794,21 +813,22 @@ function IconGraphic({ p, clock }: { p: BaseAnim; clock: Clock }) {
       ? 'center'
       : 'flex-start';
   const textAlign = growLeft ? 'right' : alignItems === 'center' ? 'center' : 'left';
-  const iconSpan = isPop ? iconBox : p.geometry.width;
   const scale = isPop ? popScaleAt(clock, p.motion) : 1;
+  const textSize = overlayTextSize(p, 28);
   return (
     <Fill>
       <div
         style={{
           position: 'absolute',
-          left: growLeft ? undefined : x,
-          right: growLeft ? OVERLAY_DESIGN_W - (x + iconSpan) : undefined,
+          left: x,
           top: y,
+          width: p.geometry.width,
+          height: p.geometry.height,
           display: 'flex',
           flexDirection: 'column',
           alignItems,
-          gap: 14,
-          maxWidth: 420,
+          justifyContent: 'center',
+          gap: Math.max(8, Math.round(iconBox * 0.08)),
           overflow: 'visible',
           opacity: fadeIn(clock, 0.2),
           pointerEvents: 'none',
@@ -821,7 +841,7 @@ function IconGraphic({ p, clock }: { p: BaseAnim; clock: Clock }) {
             flexWrap: layout === 'cluster' ? 'wrap' : undefined,
             alignItems: 'center',
             justifyContent: growLeft ? 'flex-end' : 'flex-start',
-            gap: layout === 'pair' ? 28 : 16,
+            gap: layout === 'pair' ? Math.max(12, iconBox * 0.16) : Math.max(8, iconBox * 0.1),
             transform: `scale(${scale})`,
             transformOrigin: growLeft ? 'top right' : 'top left',
           }}
@@ -868,11 +888,11 @@ function IconGraphic({ p, clock }: { p: BaseAnim; clock: Clock }) {
           <span
             style={{
               color: 'white',
-              fontSize: 28,
+              fontSize: textSize,
               fontWeight: 700,
               lineHeight: 1.25,
               textAlign,
-              maxWidth: 400,
+              maxWidth: p.geometry.width,
               textShadow: '0 2px 12px rgba(0,0,0,0.7)',
               whiteSpace: 'normal',
             }}

@@ -3,7 +3,13 @@
 import { useEffect, useMemo, useRef, useState, type CSSProperties } from 'react';
 import type { TimelineClip, TimelineState } from '@/lib/video-editor/types';
 import { getActiveClipsAtTime } from '@/lib/video-editor/math';
-import { isInfographicActiveAtTime, type RemotionInfographicSpec } from '@/lib/video-editor/infographics';
+import {
+  enrichRemotionFromSpecs,
+  isInfographicActiveAtTime,
+  overlayFontSizeFromClip,
+  overlayGeometryFromClip,
+  type RemotionInfographicSpec,
+} from '@/lib/video-editor/infographics';
 import { isImageClip } from '@/lib/video-editor/mediaNames';
 import { TimelineOverlayPreview } from '@/components/studio/video-timeline/TimelineOverlayPreview';
 import { Sparkles, Film, Volume2 } from 'lucide-react';
@@ -12,6 +18,11 @@ import {
   DEFAULT_CAPTION_STYLE,
   type CaptionStyle,
 } from '@/lib/video-editor/captions';
+import {
+  clampOverlayGeometry,
+  isFullFramePlacement,
+  type OverlayGeometryPx,
+} from '@/remotion/placement';
 
 type TextStyle = {
   /** Distance from the left edge of the frame, as a % of frame width. */
@@ -39,6 +50,8 @@ type Props = {
   onCaptionPositionChange?: (x: number, y: number) => void;
   /** Fired while a corner handle is dragged to resize the text. */
   onTextResize?: (fontSize: number) => void;
+  /** Fired when infographic text/icons are dragged or resized on the preview. */
+  onOverlayTransform?: (clipId: string, geometry: OverlayGeometryPx, fontSize: number) => void;
   /** Fired when the inline-edited text is changed — receives the clip id being edited. */
   onTextEdit?: (clipId: string, text: string) => void;
   /** Library-card specs — used to restore `icon_name` the timeline clip may have dropped. */
@@ -94,6 +107,7 @@ function localMediaTime(clip: TimelineClip, globalTime: number): number {
 }
 
 const DESIGN_WIDTH = 1920;
+const DESIGN_HEIGHT = 1080;
 
 function previewOverlayScale(width: number): number {
   if (!Number.isFinite(width) || width <= 0) return 0;
@@ -140,6 +154,7 @@ export function TimelinePreview({
   onTextPositionChange,
   onCaptionPositionChange,
   onTextResize,
+  onOverlayTransform,
   onTextEdit,
   overlaySpecs = [],
 }: Props) {
@@ -241,6 +256,87 @@ export function TimelinePreview({
     window.addEventListener('pointerup', up);
   };
 
+  const beginDragOverlay = (
+    e: React.PointerEvent,
+    clip: TimelineClip,
+    geo: OverlayGeometryPx,
+  ) => {
+    if (!onOverlayTransform) return;
+    e.stopPropagation();
+    e.preventDefault();
+    const root = rootRef.current;
+    if (!root) return;
+    const rect = root.getBoundingClientRect();
+    const startX = e.clientX;
+    const startY = e.clientY;
+    const fontSize = overlayFontSizeFromClip(clip);
+    const move = (ev: PointerEvent) => {
+      const dx = ((ev.clientX - startX) / rect.width) * DESIGN_WIDTH;
+      const dy = ((ev.clientY - startY) / rect.height) * DESIGN_HEIGHT;
+      onOverlayTransform(
+        clip.id,
+        clampOverlayGeometry({ ...geo, x: geo.x + dx, y: geo.y + dy }),
+        fontSize,
+      );
+    };
+    const up = () => {
+      window.removeEventListener('pointermove', move);
+      window.removeEventListener('pointerup', up);
+    };
+    window.addEventListener('pointermove', move);
+    window.addEventListener('pointerup', up);
+  };
+
+  const beginResizeOverlay = (
+    e: React.PointerEvent,
+    clip: TimelineClip,
+    geo: OverlayGeometryPx,
+    corner: ResizeCorner,
+  ) => {
+    if (!onOverlayTransform) return;
+    e.stopPropagation();
+    e.preventDefault();
+    const root = rootRef.current;
+    if (!root) return;
+    const rect = root.getBoundingClientRect();
+    const startX = e.clientX;
+    const startY = e.clientY;
+    const startFont = overlayFontSizeFromClip(clip);
+    const startArea = Math.max(1, geo.width * geo.height);
+    const move = (ev: PointerEvent) => {
+      const dx = ((ev.clientX - startX) / rect.width) * DESIGN_WIDTH;
+      const dy = ((ev.clientY - startY) / rect.height) * DESIGN_HEIGHT;
+      let { x, y, width, height } = geo;
+      if (corner === 'tl') {
+        x += dx;
+        y += dy;
+        width -= dx;
+        height -= dy;
+      } else if (corner === 'tr') {
+        y += dy;
+        width += dx;
+        height -= dy;
+      } else if (corner === 'bl') {
+        x += dx;
+        width -= dx;
+        height += dy;
+      } else {
+        width += dx;
+        height += dy;
+      }
+      const next = clampOverlayGeometry({ x, y, width, height });
+      const scale = Math.sqrt((next.width * next.height) / startArea);
+      const fontSize = Math.max(8, Math.min(300, Math.round(startFont * scale)));
+      onOverlayTransform(clip.id, next, fontSize);
+    };
+    const up = () => {
+      window.removeEventListener('pointermove', move);
+      window.removeEventListener('pointerup', up);
+    };
+    window.addEventListener('pointermove', move);
+    window.addEventListener('pointerup', up);
+  };
+
   const videoARef = useRef<HTMLVideoElement>(null);
   const videoBRef = useRef<HTMLVideoElement>(null);
   const [activeBuf, setActiveBuf] = useState<'A' | 'B'>('A');
@@ -304,6 +400,21 @@ export function TimelinePreview({
     if (!isInfographicActiveAtTime(timeline.currentTime, textClip.start, dur)) return null;
     return textClip;
   }, [textClip, timeline.currentTime]);
+
+  const overlayHandleClips = useMemo(() => {
+    if (!onOverlayTransform) return [];
+    const list: TimelineClip[] = [];
+    const pushIfOverlay = (clip: TimelineClip | null) => {
+      if (!clip) return;
+      const placement = clip.placement || clip.remotion?.placement;
+      if (isFullFramePlacement(placement)) return;
+      if (list.some((c) => c.id === clip.id)) return;
+      list.push(clip);
+    };
+    pushIfOverlay(remotionInfoClip);
+    pushIfOverlay(remotionTextClip);
+    return list;
+  }, [onOverlayTransform, remotionInfoClip, remotionTextClip]);
 
   const mediaClip = brollClip || videoClip;
   const mediaIsImage = isImageClip(mediaClip);
@@ -747,6 +858,46 @@ export function TimelinePreview({
           overlaySpecs={overlaySpecs}
         />
       ) : null}
+
+      {onOverlayTransform &&
+        overlayScale > 0 &&
+        overlayHandleClips.map((clip) => {
+          const remotion = clip.remotion
+            ? enrichRemotionFromSpecs(clip.remotion, overlaySpecs, clip)
+            : clip.remotion;
+          const geo = overlayGeometryFromClip({ ...clip, remotion });
+          return (
+            <div
+              key={`overlay-handle-${clip.id}`}
+              onPointerDown={(e) => beginDragOverlay(e, { ...clip, remotion }, geo)}
+              className="absolute z-[6] touch-none select-none rounded-lg border border-dashed border-[#1d1d1f]/50"
+              style={{
+                left: `${(geo.x / DESIGN_WIDTH) * 100}%`,
+                top: `${(geo.y / DESIGN_HEIGHT) * 100}%`,
+                width: `${(geo.width / DESIGN_WIDTH) * 100}%`,
+                height: `${(geo.height / DESIGN_HEIGHT) * 100}%`,
+                cursor: 'grab',
+              }}
+            >
+              <span
+                onPointerDown={(e) => beginResizeOverlay(e, { ...clip, remotion }, geo, 'tl')}
+                className="absolute -left-1.5 -top-1.5 h-3 w-3 cursor-nwse-resize touch-none rounded-full border-2 border-white bg-[#1d1d1f] shadow"
+              />
+              <span
+                onPointerDown={(e) => beginResizeOverlay(e, { ...clip, remotion }, geo, 'tr')}
+                className="absolute -right-1.5 -top-1.5 h-3 w-3 cursor-nesw-resize touch-none rounded-full border-2 border-white bg-[#1d1d1f] shadow"
+              />
+              <span
+                onPointerDown={(e) => beginResizeOverlay(e, { ...clip, remotion }, geo, 'bl')}
+                className="absolute -left-1.5 -bottom-1.5 h-3 w-3 cursor-nesw-resize touch-none rounded-full border-2 border-white bg-[#1d1d1f] shadow"
+              />
+              <span
+                onPointerDown={(e) => beginResizeOverlay(e, { ...clip, remotion }, geo, 'br')}
+                className="absolute -right-1.5 -bottom-1.5 h-3 w-3 cursor-nwse-resize touch-none rounded-full border-2 border-white bg-[#1d1d1f] shadow"
+              />
+            </div>
+          );
+        })}
 
       {!remotionInfoClip && infoClip && infoClip.mode === 'fullscreen' && (
         <div className="absolute inset-0 z-[2] flex flex-col items-center justify-center gap-2 bg-violet-950/70 px-6 text-center">

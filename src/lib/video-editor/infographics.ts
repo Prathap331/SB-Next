@@ -5,6 +5,7 @@ import {
   geometryPxFromPreviewOffsets,
   placementFromPreviewOffsets,
   placementToDesignPx,
+  resolveOverlayGeometry,
   type OverlayGeometryPx,
 } from '@/remotion/placement';
 import type { BeatAnimationUpdate } from '@/services/api';
@@ -506,11 +507,37 @@ export function enrichRemotionFromSpecs<T extends { props: Record<string, unknow
 ): T {
   const match = specs.find((s) => overlaySpecMatchesClip(s, clip));
   if (!match) return remotion;
-  const props = mergeRicherRemotionProps(remotion.props, match.props);
+  // Specs fill missing icons; clip props (geometry, font size, motion) win so
+  // preview drag/resize is not overwritten by the original library payload.
+  const props = mergeRicherRemotionProps(match.props, remotion.props);
   return {
     ...remotion,
     props,
     placement: remotion.placement || match.placement,
+  };
+}
+
+/** Shift a stored overlay motion path by a design-pixel delta (user drag). */
+export function translateOverlayMotion(
+  raw: unknown,
+  dx: number,
+  dy: number,
+): Record<string, unknown> | undefined {
+  const rec = asRecord(raw);
+  if (!rec) return undefined;
+  if (!dx && !dy) return rec;
+  const n = (v: unknown) => (typeof v === 'number' && Number.isFinite(v) ? v : null);
+  const startX = n(rec.startX);
+  const startY = n(rec.startY);
+  const endX = n(rec.endX);
+  const endY = n(rec.endY);
+  if (startX == null && startY == null && endX == null && endY == null) return rec;
+  return {
+    ...rec,
+    startX: (startX ?? endX ?? 0) + dx,
+    startY: (startY ?? endY ?? 0) + dy,
+    endX: (endX ?? startX ?? 0) + dx,
+    endY: (endY ?? startY ?? 0) + dy,
   };
 }
 
@@ -641,6 +668,9 @@ export function parseRemotionInfographic(raw: unknown): RemotionInfographicSpec 
   if (backgroundHint) props.backgroundColorHint = backgroundHint;
   const geometry = parseGeometryPx(obj.geometry_px ?? obj.geometryPx ?? props.geometryPx);
   if (geometry) props.geometryPx = geometry;
+  const fontSize =
+    asFiniteNumber(obj.font_size) ?? asFiniteNumber(props.fontSize) ?? asFiniteNumber(props.font_size);
+  if (fontSize != null && fontSize > 0) props.fontSize = fontSize;
   const highlight =
     asString(obj.highlight_target_text) ?? asString(props.highlightTargetText) ?? asString(props.highlight_target_text);
   if (highlight) props.highlightTargetText = highlight;
@@ -927,7 +957,47 @@ export function motionToBeatUpdate(raw: unknown): NonNullable<BeatAnimationUpdat
 }
 
 function geometryFromClipProps(props: Record<string, unknown> | undefined): OverlayGeometryPx | null {
-  return parseGeometryPx(props?.geometryPx ?? props?.geometry_px);
+  const parsed = parseGeometryPx(props?.geometryPx ?? props?.geometry_px);
+  if (!parsed) return null;
+  return { x: parsed.x, y: parsed.y, width: parsed.width, height: parsed.height };
+}
+
+function defaultOverlayFallback(
+  animationType: string,
+  placement: string | undefined,
+): OverlayGeometryPx {
+  const type = (animationType || '').toLowerCase();
+  let width = 520;
+  let height = 160;
+  if (
+    type.includes('icon_pop') ||
+    type === 'emoji_reaction' ||
+    type === 'badge_sticker' ||
+    type.includes('avatar')
+  ) {
+    width = 160;
+    height = 160;
+  } else if (type.includes('icon_sequence') || type.includes('stat_counter')) {
+    width = 720;
+    height = 280;
+  }
+  return { ...placementToDesignPx(placement, width, height), width, height };
+}
+
+/** Design-pixel box for an overlay clip — explicit geometry_px, else placement. */
+export function overlayGeometryFromClip(clip: TimelineClip): OverlayGeometryPx {
+  const remotion = clip.remotion;
+  const placement = clip.placement || remotion?.placement;
+  const existing = geometryFromClipProps(remotion?.props);
+  const fallback = defaultOverlayFallback(remotion?.animationType || '', placement);
+  return resolveOverlayGeometry(existing, placement, fallback);
+}
+
+export function overlayFontSizeFromClip(clip: TimelineClip, fallback = 28): number {
+  const n = asFiniteNumber(clip.remotion?.props.fontSize ?? clip.remotion?.props.font_size);
+  if (n != null && n > 0) return Math.round(n);
+  const geo = overlayGeometryFromClip(clip);
+  return Math.max(12, Math.round(geo.height * 0.18) || fallback);
 }
 
 function estimatedTextBoxSize(text: string | undefined, fontSize: number): { width: number; height: number } {
@@ -968,9 +1038,19 @@ export function buildBeatAnimationUpdate(
   if (clip.type === 'text') {
     const ox = clip.offsetX ?? 50;
     const oy = clip.offsetY ?? 15;
-    const box = estimatedTextBoxSize(clip.text, fallbacks?.fontSize ?? 72);
-    payload.placement = placementFromPreviewOffsets(ox, oy);
-    payload.geometry_px = geometryPxFromPreviewOffsets(ox, oy, box.width, box.height);
+    const fontSize =
+      asFiniteNumber(props.fontSize ?? props.font_size) ?? fallbacks?.fontSize ?? 72;
+    payload.font_size = Math.round(fontSize);
+    const existingGeo = geometryFromClipProps(props);
+    if (existingGeo) {
+      payload.geometry_px = existingGeo;
+      payload.placement =
+        clip.placement || remotion?.placement || placementFromPreviewOffsets(ox, oy);
+    } else {
+      const box = estimatedTextBoxSize(clip.text, fontSize);
+      payload.placement = placementFromPreviewOffsets(ox, oy);
+      payload.geometry_px = geometryPxFromPreviewOffsets(ox, oy, box.width, box.height);
+    }
     payload.display_text = clip.text ?? '';
     const color = (clip.textColor || fallbacks?.textColor)?.trim();
     if (color) payload.color_hint = color;
@@ -994,11 +1074,12 @@ export function buildBeatAnimationUpdate(
   if (existingGeo) {
     payload.geometry_px = existingGeo;
   } else if (placement) {
-    const w = 520;
-    const h = 160;
-    const pos = placementToDesignPx(placement, w, h);
-    payload.geometry_px = { ...pos, width: w, height: h };
+    payload.geometry_px = overlayGeometryFromClip(clip);
   }
+  const fontSize =
+    asFiniteNumber(props.fontSize ?? props.font_size) ??
+    (payload.geometry_px ? Math.round(payload.geometry_px.height * 0.18) : fallbacks?.fontSize);
+  if (fontSize != null && fontSize > 0) payload.font_size = Math.round(fontSize);
   const previousDisplay = props.displayText ?? props.display_text;
   const display =
     previousDisplay != null

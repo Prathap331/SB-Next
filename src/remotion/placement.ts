@@ -154,6 +154,39 @@ export function geometryPxFromPreviewOffsets(
   };
 }
 
+/** Center of a design-pixel box as the preview's left% / bottom% anchors. */
+export function previewOffsetsFromGeometryPx(
+  geo: OverlayGeometryPx,
+  canvasW = OVERLAY_DESIGN_W,
+  canvasH = OVERLAY_DESIGN_H,
+): { offsetX: number; offsetY: number } {
+  const cx = geo.x + geo.width / 2;
+  const fromBottom = canvasH - (geo.y + geo.height / 2);
+  return {
+    offsetX: Math.max(4, Math.min(96, (cx / canvasW) * 100)),
+    offsetY: Math.max(4, Math.min(96, (fromBottom / canvasH) * 100)),
+  };
+}
+
+const MIN_OVERLAY_W = 64;
+const MIN_OVERLAY_H = 48;
+
+/** Keeps an overlay box inside the 1920×1080 design frame. */
+export function clampOverlayGeometry(
+  geo: OverlayGeometryPx,
+  canvasW = OVERLAY_DESIGN_W,
+  canvasH = OVERLAY_DESIGN_H,
+): OverlayGeometryPx {
+  const width = Math.round(Math.max(MIN_OVERLAY_W, Math.min(canvasW, geo.width)));
+  const height = Math.round(Math.max(MIN_OVERLAY_H, Math.min(canvasH, geo.height)));
+  return {
+    x: Math.round(Math.max(0, Math.min(canvasW - width, geo.x))),
+    y: Math.round(Math.max(0, Math.min(canvasH - height, geo.y))),
+    width,
+    height,
+  };
+}
+
 export function isRightPlacement(placement: string | undefined): boolean {
   const kind = normalizePlacement(placement);
   return kind === 'top_right' || kind === 'bottom_right' || kind === 'center_right';

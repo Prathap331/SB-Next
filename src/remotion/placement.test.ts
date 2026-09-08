@@ -1,10 +1,12 @@
 import {
   OVERLAY_DESIGN_W,
   OVERLAY_DESIGN_H,
+  clampOverlayGeometry,
   geometryPxFromPreviewOffsets,
   isRightPlacement,
   placementFromPreviewOffsets,
   placementToDesignPx,
+  previewOffsetsFromGeometryPx,
   resolveOverlayGeometry,
 } from './placement';
 
@@ -53,5 +55,23 @@ describe('overlay placement + geometry', () => {
     expect(geo.height).toBe(160);
     expect(geo.x).toBe(Math.round(OVERLAY_DESIGN_W / 2 - 260));
     expect(geo.y).toBe(Math.round(OVERLAY_DESIGN_H - 0.12 * OVERLAY_DESIGN_H - 160));
+  });
+
+  it('converts geometry_px back into preview left/bottom percentages', () => {
+    const offsets = previewOffsetsFromGeometryPx({ x: 800, y: 400, width: 320, height: 160 });
+    expect(offsets.offsetX).toBeCloseTo(((800 + 160) / OVERLAY_DESIGN_W) * 100, 5);
+    expect(offsets.offsetY).toBeCloseTo(((OVERLAY_DESIGN_H - (400 + 80)) / OVERLAY_DESIGN_H) * 100, 5);
+  });
+
+  it('clamps overlay geometry inside the design frame', () => {
+    expect(clampOverlayGeometry({ x: -40, y: -20, width: 80, height: 60 })).toEqual({
+      x: 0,
+      y: 0,
+      width: 80,
+      height: 60,
+    });
+    const huge = clampOverlayGeometry({ x: 1800, y: 1000, width: 400, height: 300 });
+    expect(huge.x + huge.width).toBeLessThanOrEqual(OVERLAY_DESIGN_W);
+    expect(huge.y + huge.height).toBeLessThanOrEqual(OVERLAY_DESIGN_H);
   });
 });
