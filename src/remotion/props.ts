@@ -55,10 +55,12 @@ export function readIconNames(props: Record<string, unknown>): string[] {
     }
     return [];
   };
+  let best: string[] = [];
   for (const key of ['icon_name', 'iconName', 'icons', 'icon_names', 'icon']) {
     const list = fromUnknown(props[key]);
-    if (list.length) return list;
+    if (list.length > best.length) best = list;
   }
+  if (best.length) return best;
   return fromUnknown(props.content_binding ?? props.contentBinding);
 }
 

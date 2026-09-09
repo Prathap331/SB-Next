@@ -6,8 +6,12 @@ import { LucideIconView } from '../icons';
 import { readAccentColor, readNonEmptyString, readStringArray, readIconNames } from '../props';
 import {
   OVERLAY_DESIGN_W,
+  defaultOverlayGeometry,
+  fitOverlayBoxForIcons,
   isCenterXPlacement,
   isRightPlacement,
+  overlayDrawOrigin,
+  overlayBoxPlacement,
   resolveOverlayGeometry,
 } from '../placement';
 
@@ -51,32 +55,6 @@ type BaseAnim = {
   motion: MotionXY | null;
   fontSize?: number;
 };
-
-function defaultGeometry(type: string): GeometryPx {
-  switch (type) {
-    case 'emoji_reaction':
-      return { x: 1696, y: 64, width: 160, height: 160 };
-    case 'badge_sticker':
-      return { x: 1696, y: 64, width: 200, height: 200 };
-    case 'pip_video_frame':
-      return { x: 1280, y: 64, width: 576, height: 324 };
-    case 'avatar_overlay':
-    case 'avatar_overlay_placeholder':
-      return { x: 64, y: 64, width: 160, height: 160 };
-    case 'mascot_animation':
-    case 'mascot_animation_placeholder':
-      return { x: 1600, y: 700, width: 260, height: 260 };
-    case 'speed_ramp_indicator':
-      return { x: 1700, y: 64, width: 160, height: 80 };
-    case 'icon_pop_in':
-      return { x: 1696, y: 64, width: 160, height: 160 };
-    case 'icon_sequence':
-    case 'stat_counter_overlay':
-      return { x: 64, y: 360, width: 720, height: 280 };
-    default:
-      return { x: 64, y: 854, width: 520, height: 160 };
-  }
-}
 
 export function interp(frame: number, input: number[], output: number[]): number {
   if (input.length < 2 || output.length !== input.length) return output[0] ?? 0;
@@ -188,7 +166,8 @@ function readGeometry(
   type: string,
   placement: string | undefined,
 ): GeometryPx {
-  const defaults = defaultGeometry(type);
+  const icons = readIconNames(props);
+  const defaults = defaultOverlayGeometry(type);
   const raw = props.geometryPx;
   let parsed: Partial<GeometryPx> | null = null;
   if (raw && typeof raw === 'object' && !Array.isArray(raw)) {
@@ -201,7 +180,7 @@ function readGeometry(
       height: n(g.height),
     };
   }
-  return resolveOverlayGeometry(parsed, placement, defaults);
+  return fitOverlayBoxForIcons(resolveOverlayGeometry(parsed, overlayBoxPlacement(placement, type), defaults), icons.length);
 }
 
 function readMotion(props: Record<string, unknown>): MotionXY | null {
@@ -280,17 +259,7 @@ function motionProgress(clock: Clock, motion: MotionXY | null): number {
 }
 
 function xyAt(clock: Clock, p: BaseAnim): { x: number; y: number } {
-  const { geometry: g, motion } = p;
-  if (!motion) return { x: g.x, y: g.y };
-  const pathDx = Math.abs(motion.endX - motion.startX);
-  const pathDy = Math.abs(motion.endY - motion.startY);
-  // Style-only / in-place pop: keep the user-placed geometry box.
-  if (pathDx < 1 && pathDy < 1) return { x: g.x, y: g.y };
-  const t = motionProgress(clock, motion);
-  return {
-    x: motion.startX + (motion.endX - motion.startX) * t,
-    y: motion.startY + (motion.endY - motion.startY) * t,
-  };
+  return overlayDrawOrigin(p.geometry, p.motion, motionProgress(clock, p.motion));
 }
 
 /** Scale 80% → 100% with a slight bounce overshoot when motion_style asks for it. */
@@ -797,13 +766,16 @@ function SpeedRamp({ p, clock }: { p: BaseAnim; clock: Clock }) {
 function IconGraphic({ p, clock }: { p: BaseAnim; clock: Clock }) {
   const names = p.icons;
   const layout = (p.iconLayout || (names.length > 1 ? 'sequence' : 'cluster')).toLowerCase();
-  const isPop = p.type === 'icon_pop_in' || names.length <= 1;
+  const isPop = names.length <= 1;
   const { x, y } = xyAt(clock, p);
   const minSide = Math.min(p.geometry.width, p.geometry.height) || 160;
   const count = Math.max(1, names.length);
   const iconBox = isPop
-    ? Math.max(48, minSide)
-    : Math.max(48, Math.min(p.geometry.height, p.geometry.width / count) * 0.9);
+    ? Math.max(48, Math.min(minSide, 220))
+    : Math.max(
+        48,
+        Math.min(112, p.geometry.height * 0.45, (p.geometry.width / count) * 0.7),
+      );
   const iconSize = Math.round(iconBox * 0.58);
   const connect = (p.motion?.style || p.type).toLowerCase().includes('connect');
   const growLeft = isRightPlacement(p.placement) || x > OVERLAY_DESIGN_W * 0.62;

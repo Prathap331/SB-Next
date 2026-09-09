@@ -34,6 +34,66 @@ export function isFullFramePlacement(placement: string | undefined): boolean {
   return normalizePlacement(placement) === 'full_frame';
 }
 
+/**
+ * Corner/edge placements pin an overlay. `center` / `full_frame` are composition
+ * defaults and must not move the drag box to the middle of the frame.
+ */
+export function overlayBoxPlacement(
+  placement: string | undefined,
+  animationType?: string,
+): string | undefined {
+  const raw = (placement || '').trim();
+  if (!raw) return undefined;
+  const kind = normalizePlacement(raw);
+  const type = (animationType || '').trim().toLowerCase();
+  const fullscreenType =
+    type.startsWith('full_screen') ||
+    type.includes('title_card') ||
+    type.includes('quote_card') ||
+    type.includes('data_viz');
+  if (kind === 'full_frame' && !fullscreenType) return undefined;
+  if (kind === 'center' && !fullscreenType) return undefined;
+  if (kind === 'unknown') return undefined;
+  return raw;
+}
+
+export type OverlayMotionPx = {
+  startX: number;
+  startY: number;
+  endX: number;
+  endY: number;
+  style?: string;
+};
+
+/**
+ * Same origin the Remotion visual uses: follow a motion path when it exists,
+ * otherwise the geometry box. If geometry was resolved to screen-center but
+ * motion still has the authored corner, keep the corner.
+ */
+export function overlayDrawOrigin(
+  geometry: OverlayGeometryPx,
+  motion: OverlayMotionPx | null | undefined,
+  progress = 0,
+): { x: number; y: number } {
+  const geoX = geometry.x;
+  const geoY = geometry.y;
+  if (!motion) return { x: geoX, y: geoY };
+  const pathDx = Math.abs(motion.endX - motion.startX);
+  const pathDy = Math.abs(motion.endY - motion.startY);
+  const t = Math.min(1, Math.max(0, progress));
+  const motionX = motion.startX + (motion.endX - motion.startX) * t;
+  const motionY = motion.startY + (motion.endY - motion.startY) * t;
+  const motionLooksPlaced = motion.startX > 8 || motion.startY > 8 || motion.endX > 8 || motion.endY > 8;
+  const geoLooksCentered =
+    Math.abs(geoX + geometry.width / 2 - OVERLAY_DESIGN_W / 2) < 120 &&
+    Math.abs(geoY + geometry.height / 2 - OVERLAY_DESIGN_H / 2) < 120;
+  if (pathDx < 1 && pathDy < 1) {
+    if (motionLooksPlaced && geoLooksCentered) return { x: motion.startX, y: motion.startY };
+    return { x: geoX, y: geoY };
+  }
+  return { x: motionX, y: motionY };
+}
+
 /** Backend overlay tracks are authored against a 1920×1080 frame. */
 export const OVERLAY_DESIGN_W = 1920;
 export const OVERLAY_DESIGN_H = 1080;
@@ -90,8 +150,59 @@ export function placementToDesignPx(
 }
 
 /**
- * Prefer explicit `geometry_px`. If x/y are missing, fall back to `placement`
- * so icon overlays still land in the correct corner.
+ * Type-specific 1920×1080 box used when `geometry_px` is missing.
+ * Shared by the Remotion visual and the preview drag handles so they stay aligned.
+ */
+export function defaultOverlayGeometry(animationType: string | undefined): OverlayGeometryPx {
+  switch ((animationType || '').trim().toLowerCase()) {
+    case 'emoji_reaction':
+      return { x: 1696, y: 64, width: 160, height: 160 };
+    case 'badge_sticker':
+      return { x: 1696, y: 64, width: 200, height: 200 };
+    case 'pip_video_frame':
+      return { x: 1280, y: 64, width: 576, height: 324 };
+    case 'avatar_overlay':
+    case 'avatar_overlay_placeholder':
+      return { x: 64, y: 64, width: 160, height: 160 };
+    case 'mascot_animation':
+    case 'mascot_animation_placeholder':
+      return { x: 1600, y: 700, width: 260, height: 260 };
+    case 'speed_ramp_indicator':
+      return { x: 1700, y: 64, width: 160, height: 80 };
+    case 'icon_pop_in':
+      return { x: 1696, y: 64, width: 160, height: 160 };
+    case 'icon_sequence':
+    case 'stat_counter_overlay':
+      return { x: 64, y: 360, width: 720, height: 280 };
+    default:
+      return { x: 64, y: 854, width: 520, height: 160 };
+  }
+}
+
+/**
+ * A 160×160 pop box cannot hold 2–3 icons — they clip off the right edge and
+ * the preview only shows the first. Widen and shift left so every icon stays on frame.
+ */
+export function fitOverlayBoxForIcons(
+  geo: OverlayGeometryPx,
+  iconCount: number,
+  canvasW = OVERLAY_DESIGN_W,
+): OverlayGeometryPx {
+  const n = Math.max(1, Math.round(iconCount));
+  if (n <= 1) return geo;
+  const minW = Math.min(canvasW - 48, Math.max(geo.width, 48 + n * 130));
+  const minH = Math.max(geo.height, 200);
+  let x = geo.x;
+  if (x + minW > canvasW - 32) {
+    x = Math.max(32, canvasW - 32 - minW);
+  }
+  return { x, y: geo.y, width: minW, height: minH };
+}
+
+/**
+ * Prefer explicit `geometry_px`. If x/y are missing, use a real `placement`
+ * string; if that is also missing, keep the type-specific fallback corner
+ * (do not treat empty placement as full-frame center).
  */
 export function resolveOverlayGeometry(
   geometryPx: Partial<OverlayGeometryPx> | null | undefined,
@@ -105,10 +216,19 @@ export function resolveOverlayGeometry(
   if (explicitX != null && explicitY != null) {
     return { x: explicitX, y: explicitY, width, height };
   }
-  const fromPlacement = placementToDesignPx(placement, width, height);
+  const hasPlacement = Boolean(placement && placement.trim());
+  if (hasPlacement) {
+    const fromPlacement = placementToDesignPx(placement, width, height);
+    return {
+      x: explicitX ?? fromPlacement.x,
+      y: explicitY ?? fromPlacement.y,
+      width,
+      height,
+    };
+  }
   return {
-    x: explicitX ?? fromPlacement.x,
-    y: explicitY ?? fromPlacement.y,
+    x: explicitX ?? fallback.x,
+    y: explicitY ?? fallback.y,
     width,
     height,
   };

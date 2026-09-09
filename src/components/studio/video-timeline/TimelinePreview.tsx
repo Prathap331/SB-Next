@@ -865,7 +865,8 @@ export function TimelinePreview({
           const remotion = clip.remotion
             ? enrichRemotionFromSpecs(clip.remotion, overlaySpecs, clip)
             : clip.remotion;
-          const geo = overlayGeometryFromClip({ ...clip, remotion });
+          const local = Math.max(0, timeline.currentTime - clip.start);
+          const geo = overlayGeometryFromClip({ ...clip, remotion }, local);
           return (
             <div
               key={`overlay-handle-${clip.id}`}

@@ -49,6 +49,14 @@ describe('backend lucide icon library', () => {
     expect(readIconNames({ icon_name: ['globe'], icons: ['shield'] })).toEqual(['globe']);
   });
 
+  it('uses the longer icon list when icon_name is a single name and icons has several', () => {
+    expect(readIconNames({ icon_name: 'globe', icons: ['globe', 'network', 'shield'] })).toEqual([
+      'globe',
+      'network',
+      'shield',
+    ]);
+  });
+
   it('reads fallback_icon from content_binding when icon_name is missing', () => {
     expect(iconNamesFromContentBinding('fallback_icon:arrow-right')).toEqual(['arrow-right']);
     expect(readIconNames({ content_binding: 'fallback_icon:arrow-right' })).toEqual(['arrow-right']);

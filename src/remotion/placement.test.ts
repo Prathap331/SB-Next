@@ -2,6 +2,10 @@ import {
   OVERLAY_DESIGN_W,
   OVERLAY_DESIGN_H,
   clampOverlayGeometry,
+  defaultOverlayGeometry,
+  fitOverlayBoxForIcons,
+  overlayBoxPlacement,
+  overlayDrawOrigin,
   geometryPxFromPreviewOffsets,
   isRightPlacement,
   placementFromPreviewOffsets,
@@ -35,6 +39,28 @@ describe('overlay placement + geometry', () => {
         height: 160,
       }),
     ).toEqual({ x: 1696, y: 64, width: 160, height: 160 });
+  });
+
+  it('does not treat center/full_frame as a pin for icon overlays', () => {
+    expect(overlayBoxPlacement('center', 'icon_pop_in')).toBeUndefined();
+    expect(overlayBoxPlacement('full_frame', 'icon_sequence')).toBeUndefined();
+    expect(overlayBoxPlacement('top_right', 'icon_pop_in')).toBe('top_right');
+  });
+
+  it('draws from motion when geometry resolved to the frame center', () => {
+    const origin = overlayDrawOrigin(
+      { x: 700, y: 460, width: 520, height: 160 },
+      { startX: 1696, startY: 64, endX: 1696, endY: 64 },
+      0,
+    );
+    expect(origin).toEqual({ x: 1696, y: 64 });
+  });
+
+  it('widens a single-icon box so 3 icons stay on the 1920 frame', () => {
+    const fitted = fitOverlayBoxForIcons({ x: 1696, y: 64, width: 160, height: 160 }, 3);
+    expect(fitted.width).toBeGreaterThanOrEqual(160 * 2);
+    expect(fitted.x + fitted.width).toBeLessThanOrEqual(OVERLAY_DESIGN_W);
+    expect(fitted.y).toBe(64);
   });
 
   it('treats top_right as a right-growing placement', () => {

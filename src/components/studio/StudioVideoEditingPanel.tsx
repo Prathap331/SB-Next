@@ -1,6 +1,7 @@
 ﻿'use client';
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import {
   Plus,
   Upload,
@@ -10,6 +11,7 @@ import {
   SkipBack,
   MoreHorizontal,
   Check,
+  AlertCircle,
   AlertTriangle,
   Sparkles,
   Film,
@@ -45,7 +47,7 @@ import {
 } from '@/components/studio/StudioAudioPanel';
 import { VoiceCloneModal } from '@/components/studio/VoiceCloneModal';
 import { canUseVoiceCloning, saveClonedVoiceProfile } from '@/lib/voice-clone';
-import { estimateSpeechDurationSeconds } from '@/lib/credits';
+import { CREDITS_PER_EDIT_VIDEO, estimateSpeechDurationSeconds } from '@/lib/credits';
 import { supabase } from '@/lib/supabaseClient';
 import { getScriptVideoUrl, saveScriptVideoUrl } from '@/lib/script-persistence';
 import {
@@ -1321,6 +1323,7 @@ export function StudioVideoEditingPanel({
   /** Navigate to the B-roll library tab to pick more media. */
   onFindMoreBroll?: (kind: 'video' | 'image') => void;
 }) {
+  const router = useRouter();
   const [stage, setStage] = useState<Stage>('editor');
   const [setupOpen, setSetupOpen] = useState(false);
   const [scenes, setScenes] = useState<Scene[]>([]);
@@ -1466,6 +1469,7 @@ export function StudioVideoEditingPanel({
   const [cloneOpen, setCloneOpen] = useState(false);
   const [previewVoiceId, setPreviewVoiceId] = useState<string | null>(null);
   const [isSubmittingSetup, setIsSubmittingSetup] = useState(false);
+  const [showInsufficientCredits, setShowInsufficientCredits] = useState(false);
   const [faceScenes, setFaceScenes] = useState<FaceSceneDraft[]>([]);
   const [sceneBrollVideoSuggestions, setSceneBrollVideoSuggestions] = useState<Record<string, Suggestion[]>>({});
   const [sceneBrollImageSuggestions, setSceneBrollImageSuggestions] = useState<Record<string, Suggestion[]>>({});
@@ -2516,6 +2520,27 @@ export function StudioVideoEditingPanel({
 
     setIsSubmittingSetup(true);
     try {
+      let remaining: number | null = null;
+      try {
+        const checked = await ApiService.checkCredits(userId);
+        remaining = checked.remaining;
+      } catch (err) {
+        console.warn('[check-credits]', err);
+      }
+      if (remaining == null) {
+        const { data: profile } = await supabase
+          .from('user_profiles')
+          .select('credits_remaining')
+          .eq('id', userId)
+          .maybeSingle();
+        const n = Number(profile?.credits_remaining);
+        remaining = Number.isFinite(n) ? n : null;
+      }
+      if (remaining != null && remaining < CREDITS_PER_EDIT_VIDEO) {
+        setShowInsufficientCredits(true);
+        return;
+      }
+
       const res: EditVideoResponse = await ApiService.editVideo({
         userId,
         script: setupScript.trim(),
@@ -2552,8 +2577,18 @@ export function StudioVideoEditingPanel({
       setStage('editor');
       setSetupOpen(false);
       showToast('Video generated');
+      try {
+        window.dispatchEvent(new Event('creditsUpdated'));
+      } catch {
+        /* ignore */
+      }
     } catch (err) {
-      showToast(err instanceof Error ? err.message : 'Failed to generate video');
+      const msg = err instanceof Error ? err.message : 'Failed to generate video';
+      if (/credit|insufficient|not enough/i.test(msg)) {
+        setShowInsufficientCredits(true);
+      } else {
+        showToast(msg);
+      }
     } finally {
       setIsSubmittingSetup(false);
     }
@@ -3609,6 +3644,15 @@ export function StudioVideoEditingPanel({
               </div>
 
               <div className="flex-shrink-0 border-t border-gray-100 p-4">
+                {videoKind === 'faceless' && (
+                  <div className="mb-3 rounded-xl border border-amber-200 bg-amber-50 px-3.5 py-2.5">
+                    <p className="text-xs font-medium leading-relaxed text-amber-950">
+                      Generating this video will deduct{' '}
+                      <span className="font-semibold">{CREDITS_PER_EDIT_VIDEO} credits</span>{' '}
+                      from your balance.
+                    </p>
+                  </div>
+                )}
                 <button
                   type="button"
                   disabled={!canSubmitSetup}
@@ -3626,7 +3670,7 @@ export function StudioVideoEditingPanel({
                   {!videoKind
                     ? 'Choose a video type'
                     : videoKind === 'faceless'
-                      ? 'Generate video'
+                      ? `Generate video · ${CREDITS_PER_EDIT_VIDEO} credits`
                       : 'Get scene-wise script'}
                 </button>
               </div>
@@ -3712,6 +3756,40 @@ export function StudioVideoEditingPanel({
       aria-label="AI video editing"
     >
       {setupDialog}
+
+      {showInsufficientCredits && (
+        <div className="fixed inset-0 z-[80] flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm">
+          <div className="bg-white rounded-3xl shadow-2xl border border-gray-200/80 p-8 max-w-sm w-full text-center">
+            <div className="w-14 h-14 rounded-full bg-red-50 border border-red-100 flex items-center justify-center mx-auto mb-4">
+              <AlertCircle className="w-7 h-7 text-red-500" />
+            </div>
+            <h2 className="text-lg font-semibold text-[#1d1d1f] mb-2">Not enough credits</h2>
+            <p className="text-sm text-[#6e6e73] font-light leading-relaxed mb-6">
+              Video generation costs {CREDITS_PER_EDIT_VIDEO} credits. You don&apos;t have enough
+              credits remaining. Upgrade your plan to keep generating videos.
+            </p>
+            <div className="flex flex-col gap-2">
+              <button
+                type="button"
+                onClick={() => {
+                  setShowInsufficientCredits(false);
+                  router.push('/pricing');
+                }}
+                className="w-full py-2.5 rounded-xl bg-[#1d1d1f] hover:bg-black text-white text-sm font-medium"
+              >
+                View Plans
+              </button>
+              <button
+                type="button"
+                onClick={() => setShowInsufficientCredits(false)}
+                className="w-full py-2 rounded-xl text-sm text-[#6e6e73] hover:text-[#1d1d1f]"
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       <VoiceCloneModal
         open={cloneOpen}

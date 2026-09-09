@@ -2,9 +2,12 @@ import { EDITOR_FPS, framesToSeconds, secondsToFrame } from './fps';
 import { frameWindowSeconds, toSceneLocalSeconds } from './timings';
 import { iconNamesFromContentBinding, readIconNames } from '@/remotion/props';
 import {
+  defaultOverlayGeometry,
+  fitOverlayBoxForIcons,
   geometryPxFromPreviewOffsets,
   placementFromPreviewOffsets,
-  placementToDesignPx,
+  overlayBoxPlacement,
+  overlayDrawOrigin,
   resolveOverlayGeometry,
   type OverlayGeometryPx,
 } from '@/remotion/placement';
@@ -216,6 +219,7 @@ export function parseIconList(value: unknown): string[] {
 }
 
 function collectIcons(obj: Record<string, unknown>, props: Record<string, unknown>): string[] {
+  let best: string[] = [];
   for (const src of [
     obj.icon_name,
     obj.iconName,
@@ -229,8 +233,9 @@ function collectIcons(obj: Record<string, unknown>, props: Record<string, unknow
     props.icon_names,
   ]) {
     const list = parseIconList(src);
-    if (list.length) return list;
+    if (list.length > best.length) best = list;
   }
+  if (best.length) return best;
   const fromBinding = iconNamesFromContentBinding(
     obj.content_binding ?? obj.contentBinding ?? props.content_binding ?? props.contentBinding,
   );
@@ -548,13 +553,7 @@ function displayTextPlain(value: unknown): string {
   return '';
 }
 
-function parseGeometryPx(raw: unknown): {
-  x: number;
-  y: number;
-  width: number;
-  height: number;
-  scale?: number;
-} | null {
+function parseGeometryPx(raw: unknown): Partial<OverlayGeometryPx> & { scale?: number } | null {
   const obj = asRecord(raw);
   if (!obj) return null;
   const x = asFiniteNumber(obj.x);
@@ -564,10 +563,10 @@ function parseGeometryPx(raw: unknown): {
   const scale = asFiniteNumber(obj.scale);
   if (x == null && y == null && width == null && height == null) return null;
   return {
-    x: x ?? 64,
-    y: y ?? 854,
-    width: Math.max(1, width ?? 520),
-    height: Math.max(1, height ?? 160),
+    ...(x != null ? { x } : {}),
+    ...(y != null ? { y } : {}),
+    ...(width != null ? { width: Math.max(1, width) } : {}),
+    ...(height != null ? { height: Math.max(1, height) } : {}),
     ...(scale != null ? { scale } : {}),
   };
 }
@@ -956,41 +955,54 @@ export function motionToBeatUpdate(raw: unknown): NonNullable<BeatAnimationUpdat
   };
 }
 
-function geometryFromClipProps(props: Record<string, unknown> | undefined): OverlayGeometryPx | null {
+function geometryFromClipProps(props: Record<string, unknown> | undefined): Partial<OverlayGeometryPx> | null {
   const parsed = parseGeometryPx(props?.geometryPx ?? props?.geometry_px);
   if (!parsed) return null;
-  return { x: parsed.x, y: parsed.y, width: parsed.width, height: parsed.height };
+  return {
+    ...(parsed.x != null ? { x: parsed.x } : {}),
+    ...(parsed.y != null ? { y: parsed.y } : {}),
+    ...(parsed.width != null ? { width: parsed.width } : {}),
+    ...(parsed.height != null ? { height: parsed.height } : {}),
+  };
 }
 
-function defaultOverlayFallback(
-  animationType: string,
-  placement: string | undefined,
-): OverlayGeometryPx {
-  const type = (animationType || '').toLowerCase();
-  let width = 520;
-  let height = 160;
-  if (
-    type.includes('icon_pop') ||
-    type === 'emoji_reaction' ||
-    type === 'badge_sticker' ||
-    type.includes('avatar')
-  ) {
-    width = 160;
-    height = 160;
-  } else if (type.includes('icon_sequence') || type.includes('stat_counter')) {
-    width = 720;
-    height = 280;
-  }
-  return { ...placementToDesignPx(placement, width, height), width, height };
-}
-
-/** Design-pixel box for an overlay clip — explicit geometry_px, else placement. */
-export function overlayGeometryFromClip(clip: TimelineClip): OverlayGeometryPx {
+/** Design-pixel box for an overlay clip — same origin the Remotion visual uses. */
+export function overlayGeometryFromClip(clip: TimelineClip, localTime = 0): OverlayGeometryPx {
   const remotion = clip.remotion;
-  const placement = clip.placement || remotion?.placement;
-  const existing = geometryFromClipProps(remotion?.props);
-  const fallback = defaultOverlayFallback(remotion?.animationType || '', placement);
-  return resolveOverlayGeometry(existing, placement, fallback);
+  const props = remotion?.props ?? {};
+  const placement = overlayBoxPlacement(clip.placement || remotion?.placement, remotion?.animationType);
+  const existing = geometryFromClipProps(props);
+  const parsedMotion = parseOverlayMotion(props.motion);
+  const motionRec = asRecord(props.motion);
+  const motion = parsedMotion ??
+    (motionRec
+      ? {
+          startX: asFiniteNumber(motionRec.startX) ?? asFiniteNumber(motionRec.endX) ?? 0,
+          startY: asFiniteNumber(motionRec.startY) ?? asFiniteNumber(motionRec.endY) ?? 0,
+          endX: asFiniteNumber(motionRec.endX) ?? asFiniteNumber(motionRec.startX) ?? 0,
+          endY: asFiniteNumber(motionRec.endY) ?? asFiniteNumber(motionRec.startY) ?? 0,
+        }
+      : null);
+  const motionX = motion?.startX;
+  const motionY = motion?.startY;
+  const seeded: Partial<OverlayGeometryPx> | null = existing
+    ? {
+        ...existing,
+        x: existing.x ?? motionX,
+        y: existing.y ?? motionY,
+      }
+    : motionX != null && motionY != null && (motionX > 8 || motionY > 8)
+      ? { x: motionX, y: motionY }
+      : null;
+  const iconCount = parseIconList(props.icon_name ?? props.icons ?? props.iconName).length;
+  const resolved = fitOverlayBoxForIcons(
+    resolveOverlayGeometry(seeded, placement, defaultOverlayGeometry(remotion?.animationType)),
+    iconCount,
+  );
+  const duration = clip.duration > 0 ? clip.duration : clip.sourceDuration || 1;
+  const progress = duration > 0 ? Math.min(1, Math.max(0, localTime / duration)) : 0;
+  const origin = overlayDrawOrigin(resolved, motion, progress);
+  return { ...resolved, x: origin.x, y: origin.y };
 }
 
 export function overlayFontSizeFromClip(clip: TimelineClip, fallback = 28): number {
@@ -1042,8 +1054,19 @@ export function buildBeatAnimationUpdate(
       asFiniteNumber(props.fontSize ?? props.font_size) ?? fallbacks?.fontSize ?? 72;
     payload.font_size = Math.round(fontSize);
     const existingGeo = geometryFromClipProps(props);
-    if (existingGeo) {
-      payload.geometry_px = existingGeo;
+    if (
+      existingGeo &&
+      existingGeo.x != null &&
+      existingGeo.y != null &&
+      existingGeo.width != null &&
+      existingGeo.height != null
+    ) {
+      payload.geometry_px = {
+        x: existingGeo.x,
+        y: existingGeo.y,
+        width: existingGeo.width,
+        height: existingGeo.height,
+      };
       payload.placement =
         clip.placement || remotion?.placement || placementFromPreviewOffsets(ox, oy);
     } else {
@@ -1070,12 +1093,7 @@ export function buildBeatAnimationUpdate(
 
   const placement = clip.placement || remotion?.placement || null;
   if (placement) payload.placement = placement;
-  const existingGeo = geometryFromClipProps(props);
-  if (existingGeo) {
-    payload.geometry_px = existingGeo;
-  } else if (placement) {
-    payload.geometry_px = overlayGeometryFromClip(clip);
-  }
+  payload.geometry_px = overlayGeometryFromClip(clip);
   const fontSize =
     asFiniteNumber(props.fontSize ?? props.font_size) ??
     (payload.geometry_px ? Math.round(payload.geometry_px.height * 0.18) : fallbacks?.fontSize);

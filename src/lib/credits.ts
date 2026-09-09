@@ -4,6 +4,11 @@ export const CREDITS_PER_SCRIPT_MINUTE = 1;
 export const CREDITS_PER_THUMBNAIL = 10;
 /** Voice / TTS: 5 credits per minute of generated speech */
 export const CREDITS_PER_VOICE_MINUTE = 5;
+/**
+ * Faceless AI video generation via POST /edit-video.
+ * Placeholder amount — change after pricing research.
+ */
+export const CREDITS_PER_EDIT_VIDEO = 50;
 
 /** Monthly credit pool by plan (fallback when subscriptions_plan.mins missing) */
 export const PLAN_CREDITS: Record<'free' | 'plus' | 'pro', number> = {

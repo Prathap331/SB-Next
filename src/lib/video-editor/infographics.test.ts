@@ -193,6 +193,18 @@ describe('remotion infographic timing', () => {
     expect(remotionInfographicLabel(spec!)).toBe('globe (+3)');
   });
 
+  it('keeps every icon when icon_name is a single string and icons is a list', () => {
+    const spec = parseRemotionInfographic({
+      animation_type: 'icon_sequence',
+      icon_name: 'globe',
+      icons: ['globe', 'network', 'shield'],
+      start: 0,
+      end: 3,
+    });
+    expect(spec?.props.icons).toEqual(['globe', 'network', 'shield']);
+    expect(spec?.props.icon_name).toEqual(['globe', 'network', 'shield']);
+  });
+
   it('keeps icon_pop_in display_text, icon, placement, and geometry', () => {
     const spec = parseRemotionInfographic({
       track_id: 'anim_s1_s1_beat1',
@@ -698,6 +710,77 @@ describe('beat animation update payload', () => {
       },
     } as never);
     expect(geo).toEqual({ x: 200, y: 120, width: 220, height: 220 });
+  });
+
+  it('places an icon_pop_in handle on the type default corner, not screen center', () => {
+    const geo = overlayGeometryFromClip({
+      id: 'info-2',
+      trackId: 'track-infographic',
+      type: 'infographic',
+      name: 'Globe',
+      start: 0,
+      duration: 2,
+      sourceStart: 0,
+      sourceDuration: 2,
+      remotion: {
+        compositionId: 'IconPop',
+        animationType: 'icon_pop_in',
+        durationFrames: 60,
+        props: { icon_name: 'globe' },
+      },
+    } as never);
+    expect(geo.x).toBeGreaterThan(1400);
+    expect(geo.y).toBe(64);
+  });
+
+  it('keeps the handle on the icon when placement is center', () => {
+    const geo = overlayGeometryFromClip({
+      id: 'info-center',
+      trackId: 'track-infographic',
+      type: 'infographic',
+      name: 'Globe',
+      start: 0,
+      duration: 2,
+      sourceStart: 0,
+      sourceDuration: 2,
+      placement: 'center',
+      remotion: {
+        compositionId: 'IconPop',
+        animationType: 'icon_pop_in',
+        durationFrames: 60,
+        placement: 'center',
+        props: {
+          icon_name: 'globe',
+          motion: { startX: 1696, startY: 64, endX: 1696, endY: 64 },
+        },
+      },
+    } as never);
+    expect(geo.x).toBeGreaterThan(1400);
+    expect(geo.y).toBeLessThan(200);
+  });
+
+  it('widens the handle box when an overlay has several icons', () => {
+    const geo = overlayGeometryFromClip({
+      id: 'info-3',
+      trackId: 'track-infographic',
+      type: 'infographic',
+      name: 'Network',
+      start: 0,
+      duration: 2,
+      sourceStart: 0,
+      sourceDuration: 2,
+      remotion: {
+        compositionId: 'IconPop',
+        animationType: 'icon_pop_in',
+        durationFrames: 60,
+        props: {
+          icon_name: ['globe', 'network', 'shield'],
+          geometryPx: { x: 1696, y: 64, width: 160, height: 160 },
+        },
+      },
+    } as never);
+    expect(geo.width).toBeGreaterThan(300);
+    expect(geo.x + geo.width).toBeLessThanOrEqual(1920);
     expect(
       overlayFontSizeFromClip({
         remotion: { props: { fontSize: 40, geometryPx: geo } },

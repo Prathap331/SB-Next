@@ -2482,12 +2482,13 @@ export class ApiService {
   }
 
   /**
-   * Expire stale credit purchases for the logged-in user.
+   * Expire stale credit purchases for the logged-in user and return remaining
+   * credits when the backend includes them in the JSON body.
    * POST /check-credits { userId }
    */
-  static async checkCredits(userId: string): Promise<void> {
+  static async checkCredits(userId: string): Promise<CheckCreditsResult> {
     const uid = userId?.trim();
-    if (!uid) return;
+    if (!uid) return { remaining: null };
 
     const response = await this.authorizedFetch(`${this.BASE_URL}/check-credits`, {
       method: 'POST',
@@ -2500,5 +2501,41 @@ export class ApiService {
         errorText || `check-credits failed: ${response.status} ${response.statusText}`,
       );
     }
+
+    const json = await response.json().catch(() => ({}));
+    return { remaining: parseRemainingCredits(json) };
   }
+}
+
+export type CheckCreditsResult = {
+  remaining: number | null;
+};
+
+function parseRemainingCredits(json: unknown): number | null {
+  if (typeof json === 'number' && Number.isFinite(json)) return json;
+  if (!json || typeof json !== 'object') return null;
+  const rec = json as Record<string, unknown>;
+  const keys = [
+    'remaining_credits',
+    'credits_remaining',
+    'remainingCredits',
+    'creditsRemaining',
+    'credits',
+    'remaining',
+    'balance',
+  ];
+  for (const key of keys) {
+    const n = Number(rec[key]);
+    if (Number.isFinite(n) && rec[key] !== '' && typeof rec[key] !== 'boolean') {
+      if (typeof rec[key] === 'object') continue;
+      return n;
+    }
+  }
+  if (rec.credits != null && typeof rec.credits === 'object') {
+    const nested = parseRemainingCredits(rec.credits);
+    if (nested != null) return nested;
+  }
+  if (rec.data != null) return parseRemainingCredits(rec.data);
+  if (rec.result != null) return parseRemainingCredits(rec.result);
+  return null;
 }
